@@ -1,0 +1,6 @@
+name: bayesclass
+dependencies:
+  - numpy
+  - scipy
+  - scikit-learn
+  - pgmpy
