@@ -1,0 +1,2 @@
+# bayesclass
+Bayesian Estimators
