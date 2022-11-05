@@ -315,7 +315,10 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 # intersphinx configuration
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
+    "python": (
+        "https://docs.python.org/{.major}".format(sys.version_info),
+        None,
+    ),
     "numpy": ("https://docs.scipy.org/doc/numpy/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/reference", None),
     "matplotlib": ("https://matplotlib.org/", None),
@@ -332,4 +335,4 @@ sphinx_gallery_conf = {
 
 def setup(app):
     # a copy button to copy snippet of code from the documentation
-    app.add_javascript("js/copybutton.js")
+    app.add_js_file("js/copybutton.js")

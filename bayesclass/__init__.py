@@ -1,4 +1,4 @@
-from ._estimators import TAN
+from .bayesclass import TAN
 
 from ._version import __version__
 

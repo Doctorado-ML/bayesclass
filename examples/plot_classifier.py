@@ -3,19 +3,19 @@
 Plotting Template Classifier
 ============================
 
-An example plot of :class:`bayesclass.template.TemplateClassifier`
+An example plot of :class:`bayesclass.TAN`
 """
 import numpy as np
 from matplotlib import pyplot as plt
-from bayesclass import TemplateClassifier
+from bayesclass import TAN
 
 X = [[0, 0], [1, 1]]
 y = [0, 1]
-clf = TemplateClassifier()
+clf = TAN()
 clf.fit(X, y)
 
 rng = np.random.RandomState(13)
-X_test = rng.rand(500, 2)
+X_test = rng.randint(2, size=(500, 2))
 y_pred = clf.predict(X_test)
 
 X_0 = X_test[y_pred == 0]

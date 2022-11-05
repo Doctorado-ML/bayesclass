@@ -6,29 +6,13 @@ This is an example on how to document the API of your own project.
 
 .. currentmodule:: bayesclass
 
-Estimator
-=========
+
+TAN
+===
 
 .. autosummary::
    :toctree: generated/
    :template: class.rst
 
-   TemplateEstimator
+   TAN
 
-Transformer
-===========
-
-.. autosummary::
-   :toctree: generated/
-   :template: class.rst
-
-   TemplateTransformer
-
-Predictor
-=========
-
-.. autosummary::
-   :toctree: generated/
-   :template: class.rst
-
-    TemplateClassifier
