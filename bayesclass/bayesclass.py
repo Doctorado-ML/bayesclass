@@ -7,11 +7,12 @@ import pandas as pd
 from sklearn.base import ClassifierMixin, BaseEstimator
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
+from sklearn.exceptions import NotFittedError
 import networkx as nx
 from pgmpy.estimators import (
     TreeSearch,
     BayesianEstimator,
-    MaximumLikelihoodEstimator,
+    # MaximumLikelihoodEstimator,
 )
 from pgmpy.models import BayesianNetwork
 import matplotlib.pyplot as plt
@@ -21,10 +22,12 @@ class TAN(ClassifierMixin, BaseEstimator):
     """An example classifier which implements a 1-NN algorithm.
     For more information regarding how to build your own classifier, read more
     in the :ref:`User Guide <user_guide>`.
+
     Parameters
     ----------
     demo_param : str, default='demo'
         A parameter used for demonstation of how to pass and store paramters.
+
     Attributes
     ----------
     X_ : ndarray, shape (n_samples, n_features)
@@ -44,6 +47,7 @@ class TAN(ClassifierMixin, BaseEstimator):
 
     def fit(self, X, y, **kwargs):
         """A reference implementation of a fitting function for a classifier.
+
         Parameters
         ----------
         X : array-like, shape (n_samples, n_features)
@@ -55,6 +59,7 @@ class TAN(ClassifierMixin, BaseEstimator):
             features: list (default=None) List of features
             head: int (default=None) Index of the head node. Default value
             gets the node with the highest sum of weights (mutual_info)
+
         Returns
         -------
         self : object
@@ -86,8 +91,17 @@ class TAN(ClassifierMixin, BaseEstimator):
             raise ValueError("Head index out of range")
 
         self.X_ = X
-        self.y_ = y
+        self.y_ = y.astype(int)
+        self.dataset_ = pd.DataFrame(
+            self.X_, columns=self.features_, dtype="int16"
+        )
+        self.dataset_[self.class_name_] = self.y_
+        try:
+            check_is_fitted(self, ["X_", "y_", "fitted_"])
+        except NotFittedError:
+            self.__build()
         self.__train()
+        self.fitted_ = True
         # Return the classifier
         return self
 
@@ -101,6 +115,7 @@ class TAN(ClassifierMixin, BaseEstimator):
         Marco Zaffalon,
         Learning extended tree augmented naive structures,
         International Journal of Approximate Reasoning,
+
         Returns
         -------
         List
@@ -121,14 +136,12 @@ class TAN(ClassifierMixin, BaseEstimator):
         ]
         return list(combinations(reordered, 2))
 
-    def __train(self):
+    def __build(self):
         # Initialize a Naive Bayes model
         net = [(self.class_name_, feature) for feature in self.features_]
         self.model_ = BayesianNetwork(net)
         # initialize a complete network with all edges
         self.model_.add_edges_from(self.__initial_edges())
-        self.dataset_ = pd.DataFrame(self.X_, columns=self.features_)
-        self.dataset_[self.class_name_] = self.y_
         # learn graph structure
         root_node = None if self.head_ is None else self.features_[self.head_]
         est = TreeSearch(self.dataset_, root_node=root_node)
@@ -139,12 +152,17 @@ class TAN(ClassifierMixin, BaseEstimator):
         )
         if self.head_ is None:
             self.head_ = est.root_node
-        self.model_ = BayesianNetwork(dag.edges())
+        self.model_ = BayesianNetwork(
+            dag.edges(), show_progress=self.show_progress
+        )
+
+    def __train(self):
         self.model_.fit(
             self.dataset_,
             # estimator=MaximumLikelihoodEstimator,
             estimator=BayesianEstimator,
             prior_type="K2",
+            n_jobs=1,
         )
 
     def plot(self, title=""):
@@ -161,20 +179,54 @@ class TAN(ClassifierMixin, BaseEstimator):
 
     def predict(self, X):
         """A reference implementation of a prediction for a classifier.
+
         Parameters
         ----------
         X : array-like, shape (n_samples, n_features)
             The input samples.
+
         Returns
         -------
         y : ndarray, shape (n_samples,)
             The label for each sample is the label of the closest sample
             seen during fit.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> import pandas as pd
+        >>> from bayesclass import TAN
+        >>> features = ['A', 'B', 'C', 'D', 'E']
+        >>> np.random.seed(17)
+        >>> values = pd.DataFrame(np.random.randint(low=0, high=2,
+        ...                       size=(1000, 5)), columns=features)
+        >>> train_data = values[:800]
+        >>> train_y = train_data['E']
+        >>> predict_data = values[800:]
+        >>> train_data.drop('E', axis=1, inplace=True)
+        >>> model = TAN(random_state=17)
+        >>> features.remove('E')
+        >>> model.fit(train_data, train_y, features=features, class_name='E')
+        TAN(random_state=17)
+        >>> predict_data = predict_data.copy()
+        >>> predict_data.drop('E', axis=1, inplace=True)
+        >>> y_pred = model.predict(predict_data)
+        >>> y_pred[:10]
+        array([[0],
+               [0],
+               [1],
+               [1],
+               [0],
+               [1],
+               [1],
+               [1],
+               [0],
+               [1]])
         """
         # Check is fit had been called
-        check_is_fitted(self, ["X_", "y_"])
+        check_is_fitted(self, ["X_", "y_", "fitted_"])
 
         # Input validation
         X = check_array(X)
-        dataset = pd.DataFrame(X, columns=self.features_)
-        return self.model_.predict(dataset).to_numpy()
+        dataset = pd.DataFrame(X, columns=self.features_, dtype="int16")
+        return self.model_.predict(dataset, n_jobs=1).to_numpy()
