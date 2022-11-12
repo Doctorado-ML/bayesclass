@@ -1,1 +1,0 @@
-m0 <- ulam(alist(height ~ dnorm(mu, sigma), mu <- a, a ~ dnorm(186, 10), sigma ~ dexp(1)), data = d, chains  = 4, iter = 2000, cores = 4, log_lik=TRUE)
