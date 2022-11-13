@@ -1,7 +1,7 @@
 import sys
 import time
 from sklearn.model_selection import cross_val_score, StratifiedKFold
-from benchmark import Discretizer
+from benchmark import Datasets
 from bayesclass import TAN
 import warnings
 
@@ -15,7 +15,7 @@ start = time.time()
 random_state = 17
 name = sys.argv[1]
 n_folds = int(sys.argv[2]) if len(sys.argv) == 3 else 5
-dt = Discretizer()
+dt = Datasets()
 name_list = list(dt) if name == "all" else [name]
 print(f"Accuracy in {n_folds} folds stratified crossvalidation")
 for name in name_list:

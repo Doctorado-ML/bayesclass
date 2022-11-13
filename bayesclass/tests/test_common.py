@@ -7,5 +7,4 @@ from bayesclass import TAN
 
 @pytest.mark.parametrize("estimator", [TAN()])
 def test_all_estimators(estimator):
-    # return check_estimator(estimator)
-    assert True
+    return check_estimator(estimator)
