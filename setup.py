@@ -21,7 +21,14 @@ URL = "https://github.com/doctorado-ml/bayesclass"
 LICENSE = "MIT"
 DOWNLOAD_URL = "https://github.com/doctorado-ml/bayesclass"
 VERSION = __version__
-INSTALL_REQUIRES = ["numpy", "scipy", "scikit-learn", "pgmpy", "networkx"]
+INSTALL_REQUIRES = [
+    "numpy",
+    "scipy",
+    "scikit-learn",
+    "pgmpy",
+    "networkx",
+    "matplotlib",
+]
 CLASSIFIERS = [
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
