@@ -35,18 +35,8 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
 ]
 [project.optional-dependencies]
-dev = [
-  "black",
-  "pre-commit",
-  "flake8",
-  "mypy",
-  "pytest",
-  "pytest-cov",
-  "sphinx",
-  "sphinx-gallery",
-  "sphinx_rtd_theme",
-  "numpydoc",
-]
+dev = ["black", "pre-commit", "flake8", "mypy", "pytest", "pytest-cov"]
+doc = ["sphinx", "sphinx-gallery", "sphinx_rtd_theme", "numpydoc"]
 [project.urls]
 Home = "https://github.com/doctorado-ml/bayesclass"
 [tool.pytest.ini_options]
