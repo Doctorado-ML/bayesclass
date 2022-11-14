@@ -1,3 +1,54 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "bayesclass"
+description = "A collection of Bayesian Estimators."
+authors = [
+  { name = "Ricardo Montañana", email = "ricardo.montanana@alu.uclm.es" },
+]
+dynamic = ['version']
+dependencies = [
+  "numpy",
+  "scipy",
+  "pandas",
+  "scikit-learn",
+  "pgmpy",
+  "networkx",
+  "matplotlib",
+]
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development",
+  "Topic :: Scientific/Engineering",
+  "License :: OSI Approved :: MIT License",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+]
+
+[project.optional-dependencies]
+dev = ["black", "pre-commit", "flake8", "mypy", "pytest", "pytest-cov"]
+doc = ["sphinx", "sphinx-gallery", "sphinx_rtd_theme", "numpydoc"]
+
+[project.urls]
+Home = "https://github.com/doctorado-ml/bayesclass"
+
+[tool.pytest.ini_options]
+addopts = "--cov --cov-report html --cov-report term-missing --cov-fail-under 95"
+
+[tool.coverage.run]
+source = ["bayesclass"]
+
 [tool.black]
 line-length = 79
 include = '\.pyi?$'
