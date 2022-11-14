@@ -69,8 +69,7 @@ def test_TAN_classifier(data):
     X = data[0]
     y = data[1]
     y_pred = clf.predict(X)
-    y = y.reshape(-1, 1)
-    assert y_pred.shape == (X.shape[0], 1)
+    assert y_pred.shape == (X.shape[0],)
     assert sum(y == y_pred) == 147
 
 
@@ -103,8 +102,7 @@ def test_TAN_classifier_simple_init(data):
     X = data[0]
     y = data[1]
     y_pred = clf.predict(X)
-    y = y.reshape(-1, 1)
-    assert y_pred.shape == (X.shape[0], 1)
+    assert y_pred.shape == (X.shape[0],)
     assert sum(y == y_pred) == 147
 
 
