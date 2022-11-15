@@ -2,12 +2,12 @@
 This is a module to be used as a reference for building other modules
 """
 import random
-from itertools import combinations
 import numpy as np
 import pandas as pd
 from sklearn.base import ClassifierMixin, BaseEstimator
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
+from sklearn.feature_selection import mutual_info_classif
 import networkx as nx
 from pgmpy.estimators import TreeSearch, BayesianEstimator
 from pgmpy.models import BayesianNetwork
@@ -16,6 +16,10 @@ from ._version import __version__
 
 
 class BayesBase(BaseEstimator, ClassifierMixin):
+    def __init__(self, random_state, show_progress):
+        self.random_state = random_state
+        self.show_progress = show_progress
+
     def _more_tags(self):
         return {
             "requires_positive_X": True,
@@ -85,34 +89,6 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         # Return the classifier
         return self
 
-    def _check_params_fit(self, X, y, kwargs):
-        """Check the parameters passed to fit"""
-        # Check that X and y have correct shape
-        X, y = check_X_y(X, y)
-        # Store the classes seen during fit
-        self.classes_ = unique_labels(y)
-        # Default values
-        self.class_name_ = "class"
-        self.features_ = [f"feature_{i}" for i in range(X.shape[1])]
-        self.head_ = 0
-        expected_args = ["class_name", "features", "head"]
-        for key, value in kwargs.items():
-            if key in expected_args:
-                setattr(self, f"{key}_", value)
-            else:
-                raise ValueError(f"Unexpected argument: {key}")
-        if self.random_state is not None:
-            random.seed(self.random_state)
-        if self.head_ == "random":
-            self.head_ = random.randint(0, len(self.features_) - 1)
-        if len(self.features_) != X.shape[1]:
-            raise ValueError(
-                "Number of features does not match the number of columns in X"
-            )
-        if self.head_ is not None and self.head_ >= len(self.features_):
-            raise ValueError("Head index out of range")
-        return X, y
-
     def predict(self, X):
         """A reference implementation of a prediction for a classifier.
 
@@ -167,17 +143,28 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         dataset = pd.DataFrame(X, columns=self.features_, dtype="int16")
         return self.model_.predict(dataset).values.ravel()
 
+    def plot(self, title="", node_size=800):
+        nx.draw_circular(
+            self.model_,
+            with_labels=True,
+            arrowsize=20,
+            node_size=node_size,
+            alpha=0.3,
+            font_weight="bold",
+        )
+        plt.title(title)
+        plt.show()
+
 
 class TAN(BayesBase):
     """Tree Augmented Naive Bayes
 
     Parameters
     ----------
-    simple_init : bool, default=True
-        How to init the initial DAG. If True, only the first feature is used
-        as father of the other features.
     random_state: int, default=None
         Random state for reproducibility
+    show_progress: bool, default=False
+        used in pgmpy to show progress bars
 
     Attributes
     ----------
@@ -201,51 +188,40 @@ class TAN(BayesBase):
         The actual classifier
     """
 
-    def __init__(
-        self, simple_init=True, show_progress=False, random_state=None
-    ):
-        self.simple_init = simple_init
-        self.show_progress = show_progress
-        self.random_state = random_state
+    def __init__(self, show_progress=False, random_state=None):
+        super().__init__(
+            show_progress=show_progress, random_state=random_state
+        )
 
-    def __initial_edges(self):
-        """As with the naive Bayes, in a TAN structure, the class has no
-        parents, while features must have the class as parent and are forced to
-        have one other feature as parent too (except for one single feature,
-        which has only the class as parent and is considered the root of the
-        features' tree)
-        Cassio P. de Campos, Giorgio Corani, Mauro Scanagatta, Marco Cuccu,
-        Marco Zaffalon,
-        Learning extended tree augmented naive structures,
-        International Journal of Approximate Reasoning,
-
-        Returns
-        -------
-        List
-            List of edges
-        """
-        head = self.head_
-        if self.simple_init:
-            first_node = self.features_[head]
-            return [
-                (first_node, feature)
-                for feature in self.features_
-                if feature != first_node
-            ]
-        # initialize a complete network with all edges starting from head
-        reordered = [
-            self.features_[idx % len(self.features_)]
-            for idx in range(head, len(self.features_) + head)
-        ]
-        return list(combinations(reordered, 2))
+    def _check_params_fit(self, X, y, kwargs):
+        """Check the parameters passed to fit"""
+        # Check that X and y have correct shape
+        X, y = check_X_y(X, y)
+        # Store the classes seen during fit
+        self.classes_ = unique_labels(y)
+        # Default values
+        self.class_name_ = "class"
+        self.features_ = [f"feature_{i}" for i in range(X.shape[1])]
+        self.head_ = 0
+        expected_args = ["class_name", "features", "head"]
+        for key, value in kwargs.items():
+            if key in expected_args:
+                setattr(self, f"{key}_", value)
+            else:
+                raise ValueError(f"Unexpected argument: {key}")
+        if self.random_state is not None:
+            random.seed(self.random_state)
+        if self.head_ == "random":
+            self.head_ = random.randint(0, len(self.features_) - 1)
+        if len(self.features_) != X.shape[1]:
+            raise ValueError(
+                "Number of features does not match the number of columns in X"
+            )
+        if self.head_ is not None and self.head_ >= len(self.features_):
+            raise ValueError("Head index out of range")
+        return X, y
 
     def _build(self):
-        # Initialize a Naive Bayes model
-        net = [(self.class_name_, feature) for feature in self.features_]
-        self.model_ = BayesianNetwork(net)
-        # initialize a complete network with all edges
-        self.model_.add_edges_from(self.__initial_edges())
-        # learn graph structure
         est = TreeSearch(self.dataset_, root_node=self.features_[self.head_])
         self.dag_ = est.estimate(
             estimator_type="tan",
@@ -263,31 +239,103 @@ class TAN(BayesBase):
             prior_type="K2",
         )
 
-    def plot(self, title=""):
-        nx.draw_circular(
-            self.model_,
-            with_labels=True,
-            arrowsize=30,
-            node_size=800,
-            alpha=0.3,
-            font_weight="bold",
-        )
-        plt.title(title)
-        plt.show()
 
-
-class KDBayesClassifier(BayesBase):
-    def __init__(self, k=3, random_state=None):
+class KDB(BayesBase):
+    def __init__(self, k, show_progress=False, random_state=None):
         self.k = k
-        self.random_state = random_state
+        super().__init__(
+            show_progress=show_progress, random_state=random_state
+        )
 
-    @staticmethod
-    def version() -> str:
-        """Return the version of the package."""
-        return __version__
+    def _check_params_fit(self, X, y, kwargs):
+        """Check the parameters passed to fit"""
+        # Check that X and y have correct shape
+        X, y = check_X_y(X, y)
+        # Store the classes seen during fit
+        self.classes_ = unique_labels(y)
+        # Default values
+        self.class_name_ = "class"
+        self.features_ = [f"feature_{i}" for i in range(X.shape[1])]
+        self.head_ = 0
+        expected_args = ["class_name", "features"]
+        for key, value in kwargs.items():
+            if key in expected_args:
+                setattr(self, f"{key}_", value)
+            else:
+                raise ValueError(f"Unexpected argument: {key}")
+        if self.random_state is not None:
+            random.seed(self.random_state)
+        if len(self.features_) != X.shape[1]:
+            raise ValueError(
+                "Number of features does not match the number of columns in X"
+            )
+        return X, y
 
     def _build(self):
-        pass
+        """
+        1. For each feature Xi, compute mutual information, I(X;;C), where C is the class.
+        2. Compute class conditional mutual information I(Xi;XjIC), f or each pair of features Xi and Xj, where i#j.
+        3. Let the used variable list, S, be empty.
+        4. Let the Bayesian network being constructed, BN, begin with a single class node, C.
+        5. Repeat until S includes all domain features
+        5.1. Select feature Xmax which is not in S and has the largest value I(Xmax;C).
+        5.2. Add a node to BN representing Xmax.
+        5.3. Add an arc from C to Xmax in BN.
+        5.4. Add m =min(lSl,/c) arcs from m distinct features Xj in S with the highest value for I(Xmax;X,jC).
+        5.5. Add Xmax to S.
+        Compute the conditional probabilility infered by the structure of BN by using counts from DB, and output BN.
+        """
+
+        def add_m_edges(dag, idx, S_nodes, conditional_weights):
+            n_edges = min(self.k, len(S_nodes))
+            cond_w = conditional_weights.copy()
+            exit_cond = False
+            num = 0
+            while not exit_cond:
+                max_minfo = np.argmax(cond_w[idx, :])
+                try:
+                    dag.add_edge(
+                        self.features_[max_minfo], self.features_[idx]
+                    )
+                    num += 1
+                except ValueError:
+                    # Loops are not allowed
+                    pass
+                cond_w[idx, max_minfo] = -1
+                exit_cond = num == n_edges or np.all(cond_w[idx, :] <= 0)
+
+        # 1. get the mutual information between each feature and the class
+        mutual = mutual_info_classif(self.X_, self.y_, discrete_features=True)
+        # 2. symmetric matrix where each element represents I(X, Y| class_node)
+        conditional_weights = TreeSearch(
+            self.dataset_
+        )._get_conditional_weights(
+            self.dataset_, self.class_name_, show_progress=self.show_progress
+        )
+        # 3.
+        S_nodes = []
+        # 4.
+        dag = BayesianNetwork()
+        dag.add_node(self.class_name_)  # , state_names=self.classes_)
+        # 5. 5.1
+        for idx in np.argsort(mutual):
+            # 5.2
+            feature = self.features_[idx]
+            dag.add_node(feature)
+            # 5.3
+            dag.add_edge(self.class_name_, feature)
+            # 5.4
+            add_m_edges(dag, idx, S_nodes, conditional_weights)
+            # 5.5
+            S_nodes.append(idx)
+        self.dag_ = dag
 
     def _train(self):
-        pass
+        self.model_ = BayesianNetwork(
+            self.dag_.edges(), show_progress=self.show_progress
+        )
+        self.model_.fit(
+            self.dataset_,
+            estimator=BayesianEstimator,
+            prior_type="K2",
+        )
