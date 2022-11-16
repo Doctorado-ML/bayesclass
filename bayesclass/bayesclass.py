@@ -241,8 +241,9 @@ class TAN(BayesBase):
 
 
 class KDB(BayesBase):
-    def __init__(self, k, show_progress=False, random_state=None):
+    def __init__(self, k, theta=0.03, show_progress=False, random_state=None):
         self.k = k
+        self.theta = theta
         super().__init__(
             show_progress=show_progress, random_state=random_state
         )
@@ -289,11 +290,14 @@ class KDB(BayesBase):
         def add_m_edges(dag, idx, S_nodes, conditional_weights):
             n_edges = min(self.k, len(S_nodes))
             cond_w = conditional_weights.copy()
-            exit_cond = False
+            exit_cond = self.k == 0
             num = 0
             while not exit_cond:
                 max_minfo = np.argmax(cond_w[idx, :])
-                if max_minfo in S_nodes:
+                if (
+                    max_minfo in S_nodes
+                    and cond_w[idx, max_minfo] > self.theta
+                ):
                     try:
                         dag.add_edge(
                             self.features_[max_minfo], self.features_[idx]

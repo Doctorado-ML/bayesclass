@@ -26,6 +26,7 @@ def test_KDB_default_hyperparameters(data, clf):
     # Test default values of hyperparameters
     assert not clf.show_progress
     assert clf.random_state is None
+    assert clf.theta == 0.03
     clf = KDB(show_progress=True, random_state=17, k=3)
     assert clf.show_progress
     assert clf.random_state == 17
