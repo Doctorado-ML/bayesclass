@@ -293,14 +293,15 @@ class KDB(BayesBase):
             num = 0
             while not exit_cond:
                 max_minfo = np.argmax(cond_w[idx, :])
-                try:
-                    dag.add_edge(
-                        self.features_[max_minfo], self.features_[idx]
-                    )
-                    num += 1
-                except ValueError:
-                    # Loops are not allowed
-                    pass
+                if max_minfo in S_nodes:
+                    try:
+                        dag.add_edge(
+                            self.features_[max_minfo], self.features_[idx]
+                        )
+                        num += 1
+                    except ValueError:
+                        # Loops are not allowed
+                        pass
                 cond_w[idx, max_minfo] = -1
                 exit_cond = num == n_edges or np.all(cond_w[idx, :] <= 0)
 
