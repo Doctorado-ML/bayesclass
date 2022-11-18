@@ -324,11 +324,10 @@ class KDB(BayesBase):
 
 
 class AODE(BayesBase, BaseEnsemble):
-    def __init__(self, min_data=30, show_progress=False, random_state=None):
+    def __init__(self, show_progress=False, random_state=None):
         super().__init__(
             show_progress=show_progress, random_state=random_state
         )
-        self.min_data = min_data
 
     def _check_params(self, X, y, kwargs):
         expected_args = ["class_name", "features"]

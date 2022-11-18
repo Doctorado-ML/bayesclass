@@ -2,8 +2,6 @@ import pytest
 import numpy as np
 from sklearn.datasets import load_iris
 from sklearn.preprocessing import KBinsDiscretizer
-from matplotlib.testing.decorators import image_comparison
-from matplotlib.testing.conftest import mpl_test_settings
 
 
 from bayesclass import AODE
@@ -26,11 +24,9 @@ def test_AODE_default_hyperparameters(data, clf):
     # Test default values of hyperparameters
     assert not clf.show_progress
     assert clf.random_state is None
-    assert clf.min_data == 30
-    clf = AODE(show_progress=True, random_state=17, min_data=3)
+    clf = AODE(show_progress=True, random_state=17)
     assert clf.show_progress
     assert clf.random_state == 17
-    assert clf.min_data == 3
     clf.fit(*data)
     assert clf.class_name_ == "class"
     assert clf.features_ == [
