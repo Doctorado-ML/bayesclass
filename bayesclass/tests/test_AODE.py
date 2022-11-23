@@ -2,6 +2,8 @@ import pytest
 import numpy as np
 from sklearn.datasets import load_iris
 from sklearn.preprocessing import KBinsDiscretizer
+from matplotlib.testing.decorators import image_comparison
+from matplotlib.testing.conftest import mpl_test_settings
 
 
 from bayesclass.bayesclass import AODE
@@ -35,6 +37,17 @@ def test_AODE_default_hyperparameters(data, clf):
         "feature_2",
         "feature_3",
     ]
+
+
+@image_comparison(
+    baseline_images=["line_dashes_AODE"], remove_text=True, extensions=["png"]
+)
+def test_AODE_plot(data, clf):
+    # mpl_test_settings will automatically clean these internal side effects
+    mpl_test_settings
+    dataset = load_iris(as_frame=True)
+    clf.fit(*data, features=dataset["feature_names"])
+    clf.plot("AODE Iris")
 
 
 def test_AODE_version(clf):

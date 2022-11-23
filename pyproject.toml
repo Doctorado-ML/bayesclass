@@ -55,6 +55,8 @@ addopts = "--cov --cov-report html --cov-report term-missing --cov-fail-under 95
 
 [tool.coverage.run]
 source = ["bayesclass"]
+[tool.coverage.report]
+show_missing = true
 
 [tool.black]
 line-length = 79
