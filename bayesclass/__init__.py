@@ -1,5 +1,5 @@
-from .bayesclass import TAN, KDB, AODE
-from ._version import __version__
+# from .bayesclass import TAN, KDB, AODE
+from bayesclass._version import __version__
 
 __author__ = "Ricardo Montañana Gómez"
 __copyright__ = "Copyright 2020-2023, Ricardo Montañana Gómez"

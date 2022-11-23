@@ -7,7 +7,7 @@ An example plot of :class:`bayesclass.TAN`
 """
 import numpy as np
 from matplotlib import pyplot as plt
-from bayesclass import TAN
+from bayesclass.bayesclass import TAN
 
 X = [[0, 0], [1, 1]]
 y = [0, 1]

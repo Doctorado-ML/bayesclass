@@ -1,6 +1,14 @@
 [build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["bayesclass"]
+license-files = ["LICENSE"]
+
+[tool.setuptools.dynamic]
+version = { attr = "bayesclass.__version__" }
+readme = { file = ["README.md"] }
 
 [project]
 name = "bayesclass"
@@ -8,17 +16,16 @@ description = "A collection of Bayesian Estimators."
 authors = [
   { name = "Ricardo Montañana", email = "ricardo.montanana@alu.uclm.es" },
 ]
-dynamic = ['version']
+dynamic = ['version', 'readme']
 dependencies = [
-  "numpy",
   "scipy",
+  "numpy",
   "pandas",
   "scikit-learn",
   "pgmpy",
   "networkx",
   "matplotlib",
 ]
-readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -44,7 +51,7 @@ doc = ["sphinx", "sphinx-gallery", "sphinx_rtd_theme", "numpydoc"]
 Home = "https://github.com/doctorado-ml/bayesclass"
 
 [tool.pytest.ini_options]
-addopts = "--cov --cov-report html --cov-report term-missing --cov-fail-under 95"
+addopts = "--cov --cov-report html --cov-report term-missing --cov-fail-under 95 " #--doctest-modules
 
 [tool.coverage.run]
 source = ["bayesclass"]

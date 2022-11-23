@@ -86,7 +86,7 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         --------
         >>> import numpy as np
         >>> import pandas as pd
-        >>> from bayesclass import TAN
+        >>> from bayesclass.bayesclass import TAN
         >>> features = ['A', 'B', 'C', 'D', 'E']
         >>> np.random.seed(17)
         >>> values = pd.DataFrame(np.random.randint(low=0, high=2,
@@ -142,7 +142,7 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         --------
         >>> import numpy as np
         >>> import pandas as pd
-        >>> from bayesclass import TAN
+        >>> from bayesclass.bayesclass import TAN
         >>> features = ['A', 'B', 'C', 'D', 'E']
         >>> np.random.seed(17)
         >>> values = pd.DataFrame(np.random.randint(low=0, high=2,
@@ -373,4 +373,4 @@ class AODE(BayesBase, BaseEnsemble):
         dataset = pd.DataFrame(X, columns=self.features_, dtype="int16")
         for index, model in enumerate(self.models_):
             result[:, index] = model.predict(dataset).values.ravel()
-        return mode(result, axis=1).mode.ravel()
+        return mode(result, axis=1, keepdims=False).mode.ravel()

@@ -4,7 +4,7 @@ from sklearn.datasets import load_iris
 from sklearn.preprocessing import KBinsDiscretizer
 
 
-from bayesclass import AODE
+from bayesclass.bayesclass import AODE
 from .._version import __version__
 
 

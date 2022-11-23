@@ -6,7 +6,7 @@ from matplotlib.testing.decorators import image_comparison
 from matplotlib.testing.conftest import mpl_test_settings
 
 
-from bayesclass import TAN
+from bayesclass.bayesclass import TAN
 from .._version import __version__
 
 
