@@ -20,7 +20,7 @@ push:  ## Push code with tags
 	git push && git push --tags
 
 test:  ## Run tests
-	python -m doctest bayesclass/bayesclass.py
+	python -m doctest bayesclass.clfs.py
 	pytest
 
 doc:  ## Update documentation

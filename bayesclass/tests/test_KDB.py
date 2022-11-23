@@ -6,7 +6,7 @@ from matplotlib.testing.decorators import image_comparison
 from matplotlib.testing.conftest import mpl_test_settings
 
 
-from bayesclass.bayesclass import KDB
+from bayesclass.clfs import KDB
 from .._version import __version__
 
 
