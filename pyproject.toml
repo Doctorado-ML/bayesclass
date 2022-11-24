@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
+requires = ["setuptools", "setuptools-scm", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
@@ -8,15 +8,15 @@ license-files = ["LICENSE"]
 
 [tool.setuptools.dynamic]
 version = { attr = "bayesclass.__version__" }
-readme = { file = ["README.md"] }
 
 [project]
 name = "bayesclass"
 description = "A collection of Bayesian Estimators."
+readme = "README.md"
 authors = [
   { name = "Ricardo Montañana", email = "ricardo.montanana@alu.uclm.es" },
 ]
-dynamic = ['version', 'readme']
+dynamic = ['version']
 dependencies = [
   "scipy",
   "numpy",
