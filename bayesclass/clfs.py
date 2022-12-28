@@ -335,7 +335,7 @@ class AODE(BayesBase, BaseEnsemble):
 
         self.dag_ = None
 
-    def _train(self):
+    def _train(self, kwargs):
         """Build SPODE estimators (Super Parent One Dependent Estimator)"""
         self.models_ = []
         class_edges = [(self.class_name_, f) for f in self.features_]
@@ -353,6 +353,7 @@ class AODE(BayesBase, BaseEnsemble):
                 self.dataset_,
                 estimator=BayesianEstimator,
                 prior_type="K2",
+                state_names=kwargs["state_names"],
             )
             self.models_.append(model)
 
