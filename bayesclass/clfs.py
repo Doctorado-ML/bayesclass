@@ -34,7 +34,8 @@ class BayesBase(BaseEstimator, ClassifierMixin):
 
     def nodes_leaves(self):
         """To keep compatiblity with the benchmark platform"""
-        return 0, 0
+        nodes = len(self.dag_) if hasattr(self, "dag_") else 0
+        return nodes, 0
 
     def _check_params_fit(self, X, y, expected_args, kwargs):
         """Check the common parameters passed to fit"""
@@ -57,6 +58,7 @@ class BayesBase(BaseEstimator, ClassifierMixin):
             raise ValueError(
                 "Number of features does not match the number of columns in X"
             )
+        self.n_features_in_ = X.shape[1]
         return X, y
 
     def fit(self, X, y, **kwargs):
@@ -115,11 +117,12 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         self.model_ = BayesianNetwork(
             self.dag_.edges(), show_progress=self.show_progress
         )
+        states = dict(state_names=kwargs.pop("state_names", []))
         self.model_.fit(
             self.dataset_,
             estimator=BayesianEstimator,
             prior_type="K2",
-            state_names=kwargs["state_names"],
+            **states,
         )
 
     def predict(self, X):
@@ -267,7 +270,7 @@ class KDB(BayesBase):
         5.1. Select feature Xmax which is not in S and has the largest value I(Xmax;C).
         5.2. Add a node to BN representing Xmax.
         5.3. Add an arc from C to Xmax in BN.
-        5.4. Add m =min(lSl,/c) arcs from m distinct features Xj in S with the highest value for I(Xmax;X,jC).
+        5.4. Add m = min(lSl,/c) arcs from m distinct features Xj in S with the highest value for I(Xmax;X,jC).
         5.5. Add Xmax to S.
         Compute the conditional probabilility infered by the structure of BN by using counts from DB, and output BN.
         """
@@ -331,8 +334,14 @@ class AODE(BayesBase, BaseEnsemble):
         expected_args = ["class_name", "features", "state_names"]
         return self._check_params_fit(X, y, expected_args, kwargs)
 
-    def _build(self):
+    def nodes_leaves(self):
+        """To keep compatiblity with the benchmark platform"""
+        nodes = 0
+        if hasattr(self, "fitted_"):
+            nodes = sum([len(x) for x in self.models_])
+        return nodes, 0
 
+    def _build(self):
         self.dag_ = None
 
     def _train(self, kwargs):
@@ -349,11 +358,12 @@ class AODE(BayesBase, BaseEnsemble):
             model = BayesianNetwork(
                 feature_edges, show_progress=self.show_progress
             )
+            states = dict(state_names=kwargs.pop("state_names", []))
             model.fit(
                 self.dataset_,
                 estimator=BayesianEstimator,
                 prior_type="K2",
-                state_names=kwargs["state_names"],
+                **states,
             )
             self.models_.append(model)
 

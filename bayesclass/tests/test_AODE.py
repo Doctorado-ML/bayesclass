@@ -55,8 +55,10 @@ def test_AODE_version(clf):
     assert __version__ == clf.version()
 
 
-def test_AODE_nodes_leaves(clf):
+def test_AODE_nodes_leaves(clf, data):
     assert clf.nodes_leaves() == (0, 0)
+    clf.fit(*data)
+    assert clf.nodes_leaves() == (20, 0)
 
 
 def test_AODE_classifier(data, clf):

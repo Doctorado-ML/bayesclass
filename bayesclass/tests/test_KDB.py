@@ -46,8 +46,10 @@ def test_KDB_version(clf):
     assert __version__ == clf.version()
 
 
-def test_KDB_nodes_leaves(clf):
+def test_KDB_nodes_leaves(clf, data):
     assert clf.nodes_leaves() == (0, 0)
+    clf.fit(*data)
+    assert clf.nodes_leaves() == (5, 0)
 
 
 def test_KDB_classifier(data, clf):

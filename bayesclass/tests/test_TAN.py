@@ -45,8 +45,11 @@ def test_TAN_version(clf):
     assert __version__ == clf.version()
 
 
-def test_TAN_nodes_leaves(clf):
+def test_TAN_nodes_leaves(clf, data):
     assert clf.nodes_leaves() == (0, 0)
+    clf = TAN(random_state=17)
+    clf.fit(*data, head="random")
+    assert clf.nodes_leaves() == (5, 0)
 
 
 def test_TAN_random_head(data):
