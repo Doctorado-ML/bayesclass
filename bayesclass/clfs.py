@@ -348,6 +348,7 @@ class AODE(BayesBase, BaseEnsemble):
         """Build SPODE estimators (Super Parent One Dependent Estimator)"""
         self.models_ = []
         class_edges = [(self.class_name_, f) for f in self.features_]
+        states = dict(state_names=kwargs.pop("state_names", []))
         for idx in range(len(self.features_)):
             feature_edges = [
                 (self.features_[idx], f)
@@ -358,7 +359,6 @@ class AODE(BayesBase, BaseEnsemble):
             model = BayesianNetwork(
                 feature_edges, show_progress=self.show_progress
             )
-            states = dict(state_names=kwargs.pop("state_names", []))
             model.fit(
                 self.dataset_,
                 estimator=BayesianEstimator,
