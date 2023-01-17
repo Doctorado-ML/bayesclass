@@ -260,6 +260,25 @@ class KDB(BayesBase):
         expected_args = ["class_name", "features", "state_names"]
         return self._check_params_fit(X, y, expected_args, kwargs)
 
+    def _add_m_edges(self, dag, idx, S_nodes, conditional_weights):
+        n_edges = min(self.k, len(S_nodes))
+        cond_w = conditional_weights.copy()
+        exit_cond = self.k == 0
+        num = 0
+        while not exit_cond:
+            max_minfo = np.argmax(cond_w[idx, :])
+            if max_minfo in S_nodes and cond_w[idx, max_minfo] > self.theta:
+                try:
+                    dag.add_edge(
+                        self.features_[max_minfo], self.features_[idx]
+                    )
+                    num += 1
+                except ValueError:
+                    # Loops are not allowed
+                    pass
+            cond_w[idx, max_minfo] = -1
+            exit_cond = num == n_edges or np.all(cond_w[idx, :] <= 0)
+
     def _build(self):
         """
         1. For each feature Xi, compute mutual information, I(X;;C), where C is the class.
@@ -274,28 +293,6 @@ class KDB(BayesBase):
         5.5. Add Xmax to S.
         Compute the conditional probabilility infered by the structure of BN by using counts from DB, and output BN.
         """
-
-        def add_m_edges(dag, idx, S_nodes, conditional_weights):
-            n_edges = min(self.k, len(S_nodes))
-            cond_w = conditional_weights.copy()
-            exit_cond = self.k == 0
-            num = 0
-            while not exit_cond:
-                max_minfo = np.argmax(cond_w[idx, :])
-                if (
-                    max_minfo in S_nodes
-                    and cond_w[idx, max_minfo] > self.theta
-                ):
-                    try:
-                        dag.add_edge(
-                            self.features_[max_minfo], self.features_[idx]
-                        )
-                        num += 1
-                    except ValueError:
-                        # Loops are not allowed
-                        pass
-                cond_w[idx, max_minfo] = -1
-                exit_cond = num == n_edges or np.all(cond_w[idx, :] <= 0)
 
         # 1. get the mutual information between each feature and the class
         mutual = mutual_info_classif(self.X_, self.y_, discrete_features=True)
@@ -318,7 +315,7 @@ class KDB(BayesBase):
             # 5.3
             dag.add_edge(self.class_name_, feature)
             # 5.4
-            add_m_edges(dag, idx, S_nodes, conditional_weights)
+            self._add_m_edges(dag, idx, S_nodes, conditional_weights)
             # 5.5
             S_nodes.append(idx)
         self.dag_ = dag
