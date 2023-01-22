@@ -66,6 +66,7 @@ def test_AODE_states(clf, data):
     clf = AODE(random_state=17)
     clf.fit(*data)
     assert clf.states_ == 23
+    assert clf.depth_ == clf.states_
 
 
 def test_AODE_classifier(data, clf):

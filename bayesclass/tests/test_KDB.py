@@ -58,6 +58,7 @@ def test_KDB_states(clf, data):
     clf = KDB(k=3, random_state=17)
     clf.fit(*data)
     assert clf.states_ == 23
+    assert clf.depth_ == clf.states_
 
 
 def test_KDB_classifier(data, clf):

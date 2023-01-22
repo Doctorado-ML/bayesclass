@@ -21,7 +21,6 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         self.show_progress = show_progress
         # To keep compatiblity with the benchmark platform
         self.nodes_leaves = self.nodes_edges
-        self.depth_ = self.states_
 
     def _more_tags(self):
         return {
@@ -70,6 +69,10 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         if hasattr(self, "fitted_"):
             return sum([len(item) for _, item in self.model_.states.items()])
         return 0
+
+    @property
+    def depth_(self):
+        return self.states_
 
     def fit(self, X, y, **kwargs):
         """A reference implementation of a fitting function for a classifier.
