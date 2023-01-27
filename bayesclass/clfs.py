@@ -19,14 +19,12 @@ class BayesBase(BaseEstimator, ClassifierMixin):
     def __init__(self, random_state, show_progress):
         self.random_state = random_state
         self.show_progress = show_progress
-        # To keep compatiblity with the benchmark platform
-        self.nodes_leaves = self.nodes_edges
 
     def _more_tags(self):
         return {
             "requires_positive_X": True,
             "requires_positive_y": True,
-            "preserve_dtype": [np.int64, np.int32],
+            "preserve_dtype": [np.int32, np.int64],
             "requires_y": True,
         }
 
@@ -44,6 +42,7 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         """Check the common parameters passed to fit"""
         # Check that X and y have correct shape
         X, y = check_X_y(X, y)
+        X = self._validate_data(X, reset=True)
         # Store the classes seen during fit
         self.classes_ = unique_labels(y)
         self.n_classes_ = self.classes_.shape[0]
@@ -55,9 +54,10 @@ class BayesBase(BaseEstimator, ClassifierMixin):
                 setattr(self, f"{key}_", value)
             else:
                 raise ValueError(f"Unexpected argument: {key}")
+        self.feature_names_in_ = self.features_
         if self.random_state is not None:
             random.seed(self.random_state)
-        if len(self.features_) != X.shape[1]:
+        if len(self.feature_names_in_) != X.shape[1]:
             raise ValueError(
                 "Number of features does not match the number of columns in X"
             )
@@ -116,13 +116,17 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         # Store the information needed to build the model
         self.X_ = X_
         self.y_ = y_
-        self.dataset_ = pd.DataFrame(self.X_, columns=self.features_)
+        self.dataset_ = pd.DataFrame(
+            self.X_, columns=self.feature_names_in_, dtype=np.int32
+        )
         self.dataset_[self.class_name_] = self.y_
         # Build the DAG
         self._build()
         # Train the model
         self._train(kwargs)
         self.fitted_ = True
+        # To keep compatiblity with the benchmark platform
+        self.nodes_leaves = self.nodes_edges
         # Return the classifier
         return self
 
@@ -189,7 +193,9 @@ class BayesBase(BaseEstimator, ClassifierMixin):
 
         # Input validation
         X = check_array(X)
-        dataset = pd.DataFrame(X, columns=self.features_, dtype="int16")
+        dataset = pd.DataFrame(
+            X, columns=self.feature_names_in_, dtype=np.int32
+        )
         return self.model_.predict(dataset).values.ravel()
 
     def plot(self, title="", node_size=800):
@@ -226,7 +232,7 @@ class TAN(BayesBase):
         The classes seen at :meth:`fit`.
     class_name_ : str
         The name of the class column
-    features_ : list
+    feature_names_in_ : list
         The list of features names
     head_ : int
         The index of the node used as head for the initial DAG
@@ -254,7 +260,7 @@ class TAN(BayesBase):
         return X, y
 
     def _build(self):
-        # est = TreeSearch(self.dataset_, root_node=self.features_[self.head_])
+        # est = TreeSearch(self.dataset_, root_node=self. feature_names_in_[self.head_])
         # self.dag_ = est.estimate(
         #     estimator_type="tan",
         #     class_node=self.class_name_,
@@ -277,9 +283,8 @@ class TAN(BayesBase):
         weights = np.delete(weights, class_node_idx, axis=1)
         reduced_columns = np.delete(self.dataset_.columns, class_node_idx)
         D = TreeSearch._create_tree_and_dag(
-            weights, reduced_columns, self.features_[self.head_]
+            weights, reduced_columns, self.feature_names_in_[self.head_]
         )
-
         # Step 4.3: Add edges from class_node to all other nodes.
         D.add_edges_from(
             [(self.class_name_, node) for node in reduced_columns]
@@ -309,7 +314,8 @@ class KDB(BayesBase):
             if max_minfo in S_nodes and cond_w[idx, max_minfo] > self.theta:
                 try:
                     dag.add_edge(
-                        self.features_[max_minfo], self.features_[idx]
+                        self.feature_names_in_[max_minfo],
+                        self.feature_names_in_[idx],
                     )
                     num += 1
                 except ValueError:
@@ -349,7 +355,7 @@ class KDB(BayesBase):
         # 5. 5.1
         for idx in np.argsort(mutual):
             # 5.2
-            feature = self.features_[idx]
+            feature = self.feature_names_in_[idx]
             dag.add_node(feature)
             # 5.3
             dag.add_edge(self.class_name_, feature)
@@ -396,13 +402,13 @@ class AODE(BayesBase, BaseEnsemble):
     def _train(self, kwargs):
         """Build SPODE estimators (Super Parent One Dependent Estimator)"""
         self.models_ = []
-        class_edges = [(self.class_name_, f) for f in self.features_]
+        class_edges = [(self.class_name_, f) for f in self.feature_names_in_]
         states = dict(state_names=kwargs.pop("state_names", []))
         for idx in range(self.n_features_in_):
             feature_edges = [
-                (self.features_[idx], f)
-                for f in self.features_
-                if f != self.features_[idx]
+                (self.feature_names_in_[idx], f)
+                for f in self.feature_names_in_
+                if f != self.feature_names_in_[idx]
             ]
             feature_edges.extend(class_edges)
             model = BayesianNetwork(
@@ -425,11 +431,13 @@ class AODE(BayesBase, BaseEnsemble):
     def predict(self, X: np.ndarray) -> np.ndarray:
         check_is_fitted(self, ["X_", "y_", "fitted_"])
         # Input validation
-        X = self._validate_data(X, reset=False)
+        X = check_array(X)
         n_samples = X.shape[0]
         n_estimators = len(self.models_)
         result = np.empty((n_samples, n_estimators))
-        dataset = pd.DataFrame(X, columns=self.features_, dtype="int16")
+        dataset = pd.DataFrame(
+            X, columns=self.feature_names_in_, dtype=np.int32
+        )
         for index, model in enumerate(self.models_):
             result[:, index] = model.predict(dataset).values.ravel()
         return mode(result, axis=1, keepdims=False).mode.ravel()

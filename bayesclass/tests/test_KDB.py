@@ -34,7 +34,7 @@ def test_KDB_default_hyperparameters(data, clf):
     assert clf.k == 3
     clf.fit(*data)
     assert clf.class_name_ == "class"
-    assert clf.features_ == [
+    assert clf.feature_names_in_ == [
         "feature_0",
         "feature_1",
         "feature_2",
@@ -48,7 +48,7 @@ def test_KDB_version(clf):
 
 
 def test_KDB_nodes_edges(clf, data):
-    assert clf.nodes_leaves() == (0, 0)
+    assert clf.nodes_edges() == (0, 0)
     clf.fit(*data)
     assert clf.nodes_leaves() == (5, 10)
 
@@ -63,7 +63,7 @@ def test_KDB_states(clf, data):
 
 def test_KDB_classifier(data, clf):
     clf.fit(*data)
-    attribs = ["classes_", "X_", "y_", "features_", "class_name_"]
+    attribs = ["classes_", "X_", "y_", "feature_names_in_", "class_name_"]
     for attr in attribs:
         assert hasattr(clf, attr)
     X = data[0]
@@ -108,14 +108,19 @@ def test_KDB_error_size_predict(data, clf):
 def test_KDB_dont_do_cycles():
     clf = KDB(k=4)
     dag = BayesianNetwork()
-    clf.features_ = ["feature_0", "feature_1", "feature_2", "feature_3"]
+    clf.feature_names_in_ = [
+        "feature_0",
+        "feature_1",
+        "feature_2",
+        "feature_3",
+    ]
     nodes = list(range(4))
     weights = np.ones((4, 4))
     for idx in range(1, 4):
-        dag.add_edge(clf.features_[0], clf.features_[idx])
-    dag.add_edge(clf.features_[1], clf.features_[2])
-    dag.add_edge(clf.features_[1], clf.features_[3])
-    dag.add_edge(clf.features_[2], clf.features_[3])
+        dag.add_edge(clf.feature_names_in_[0], clf.feature_names_in_[idx])
+    dag.add_edge(clf.feature_names_in_[1], clf.feature_names_in_[2])
+    dag.add_edge(clf.feature_names_in_[1], clf.feature_names_in_[3])
+    dag.add_edge(clf.feature_names_in_[2], clf.feature_names_in_[3])
     for idx in range(4):
         clf._add_m_edges(dag, idx, nodes, weights)
         assert len(dag.edges()) == 6

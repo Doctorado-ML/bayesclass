@@ -31,7 +31,7 @@ def test_AODE_default_hyperparameters(data, clf):
     assert clf.random_state == 17
     clf.fit(*data)
     assert clf.class_name_ == "class"
-    assert clf.features_ == [
+    assert clf.feature_names_in_ == [
         "feature_0",
         "feature_1",
         "feature_2",
@@ -56,7 +56,7 @@ def test_AODE_version(clf):
 
 
 def test_AODE_nodes_edges(clf, data):
-    assert clf.nodes_leaves() == (0, 0)
+    assert clf.nodes_edges() == (0, 0)
     clf.fit(*data)
     assert clf.nodes_leaves() == (20, 28)
 
@@ -71,7 +71,14 @@ def test_AODE_states(clf, data):
 
 def test_AODE_classifier(data, clf):
     clf.fit(*data)
-    attribs = ["classes_", "X_", "y_", "features_", "class_name_"]
+    attribs = [
+        "classes_",
+        "X_",
+        "y_",
+        "feature_names_in_",
+        "class_name_",
+        "n_features_in_",
+    ]
     for attr in attribs:
         assert hasattr(clf, attr)
     X = data[0]

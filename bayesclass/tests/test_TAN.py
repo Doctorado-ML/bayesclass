@@ -32,7 +32,7 @@ def test_TAN_default_hyperparameters(data, clf):
     clf.fit(*data)
     assert clf.head_ == 0
     assert clf.class_name_ == "class"
-    assert clf.features_ == [
+    assert clf.feature_names_in_ == [
         "feature_0",
         "feature_1",
         "feature_2",
@@ -46,7 +46,7 @@ def test_TAN_version(clf):
 
 
 def test_TAN_nodes_edges(clf, data):
-    assert clf.nodes_leaves() == (0, 0)
+    assert clf.nodes_edges() == (0, 0)
     clf = TAN(random_state=17)
     clf.fit(*data, head="random")
     assert clf.nodes_leaves() == (5, 7)
@@ -68,7 +68,14 @@ def test_TAN_random_head(data):
 
 def test_TAN_classifier(data, clf):
     clf.fit(*data)
-    attribs = ["classes_", "X_", "y_", "head_", "features_", "class_name_"]
+    attribs = [
+        "classes_",
+        "X_",
+        "y_",
+        "head_",
+        "feature_names_in_",
+        "class_name_",
+    ]
     for attr in attribs:
         assert hasattr(clf, attr)
     X = data[0]
@@ -89,7 +96,7 @@ def test_TAN_plot(data, clf):
     clf.plot("TAN Iris head=0")
 
 
-def test_KDB_wrong_num_features(data, clf):
+def test_TAN_wrong_num_features(data, clf):
     with pytest.raises(
         ValueError,
         match="Number of features does not match the number of columns in X",
