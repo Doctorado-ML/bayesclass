@@ -37,6 +37,12 @@ doc-clean:  ## Update documentation
 audit: ## Audit pip
 	pip-audit
 
+version:
+	@echo "Current Python version .....: $(shell python --version)"
+	@echo "Current Bayesclass version .: $(shell python -c "from bayesclass import _version; print(_version.__version__)")"
+	@echo "Installed Bayesclass version: $(shell pip show bayesclass | grep Version | cut -d' ' -f2)"
+	@echo "Installed pgmpy version ....: $(shell pip show pgmpy | grep Version | cut -d' ' -f2)"
+
 help: ## Show help message
 	@IFS=$$'\n' ; \
 	help_lines=(`fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##/:/'`); \
