@@ -260,7 +260,8 @@ class TAN(BayesBase):
         return X, y
 
     def _build(self):
-        # est = TreeSearch(self.dataset_, root_node=self. feature_names_in_[self.head_])
+        # est = TreeSearch(self.dataset_,
+        # root_node=self.feature_names_in_[self.head_])
         # self.dag_ = est.estimate(
         #     estimator_type="tan",
         #     class_node=self.class_name_,
@@ -326,17 +327,23 @@ class KDB(BayesBase):
 
     def _build(self):
         """
-        1. For each feature Xi, compute mutual information, I(X;;C), where C is the class.
-        2. Compute class conditional mutual information I(Xi;XjIC), f or each pair of features Xi and Xj, where i#j.
+        1. For each feature Xi, compute mutual information, I(X;;C),
+        where C is the class.
+        2. Compute class conditional mutual information I(Xi;XjIC), f or each
+        pair of features Xi and Xj, where i#j.
         3. Let the used variable list, S, be empty.
-        4. Let the Bayesian network being constructed, BN, begin with a single class node, C.
+        4. Let the Bayesian network being constructed, BN, begin with a single
+        class node, C.
         5. Repeat until S includes all domain features
-        5.1. Select feature Xmax which is not in S and has the largest value I(Xmax;C).
+        5.1. Select feature Xmax which is not in S and has the largest value
+        I(Xmax;C).
         5.2. Add a node to BN representing Xmax.
         5.3. Add an arc from C to Xmax in BN.
-        5.4. Add m = min(lSl,/c) arcs from m distinct features Xj in S with the highest value for I(Xmax;X,jC).
+        5.4. Add m = min(lSl,/c) arcs from m distinct features Xj in S with
+        the highest value for I(Xmax;X,jC).
         5.5. Add Xmax to S.
-        Compute the conditional probabilility infered by the structure of BN by using counts from DB, and output BN.
+        Compute the conditional probabilility infered by the structure of BN by
+        using counts from DB, and output BN.
         """
 
         # 1. get the mutual information between each feature and the class
