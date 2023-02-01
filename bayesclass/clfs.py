@@ -323,7 +323,7 @@ class KDB(BayesBase):
                     # Loops are not allowed
                     pass
             cond_w[idx, max_minfo] = -1
-            exit_cond = num == n_edges or np.all(cond_w[idx, :] <= 0)
+            exit_cond = num == n_edges or np.all(cond_w[idx, :] <= self.theta)
 
     def _build(self):
         """
@@ -354,21 +354,22 @@ class KDB(BayesBase):
         )._get_conditional_weights(
             self.dataset_, self.class_name_, show_progress=self.show_progress
         )
-        # 3.
+        # 3. Let the used variable list, S, be empty.
         S_nodes = []
-        # 4.
+        # 4. Let the BN being constructed, BN, begin with a single class node
         dag = BayesianNetwork()
         dag.add_node(self.class_name_)  # , state_names=self.classes_)
-        # 5. 5.1
+        # 5. Repeat until S includes all domain features
+        # 5.1 Select feature Xmax which is not in S and has the largest value
         for idx in np.argsort(mutual):
-            # 5.2
+            # 5.2 Add a node to BN representing Xmax.
             feature = self.feature_names_in_[idx]
             dag.add_node(feature)
-            # 5.3
+            # 5.3 Add an arc from C to Xmax in BN.
             dag.add_edge(self.class_name_, feature)
             # 5.4
             self._add_m_edges(dag, idx, S_nodes, conditional_weights)
-            # 5.5
+            # 5.5 Add Xmax to S.
             S_nodes.append(idx)
         self.dag_ = dag
 
