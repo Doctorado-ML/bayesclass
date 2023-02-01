@@ -367,7 +367,7 @@ class KDB(BayesBase):
             dag.add_node(feature)
             # 5.3 Add an arc from C to Xmax in BN.
             dag.add_edge(self.class_name_, feature)
-            # 5.4
+            # 5.4 Add m = min(lSl,/c) arcs from m distinct features Xj in S
             self._add_m_edges(dag, idx, S_nodes, conditional_weights)
             # 5.5 Add Xmax to S.
             S_nodes.append(idx)
