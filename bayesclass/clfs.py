@@ -12,6 +12,7 @@ import networkx as nx
 from pgmpy.estimators import TreeSearch, BayesianEstimator
 from pgmpy.models import BayesianNetwork
 import matplotlib.pyplot as plt
+from fimdlp.mdlp import MultiDiscretizer
 from ._version import __version__
 
 
@@ -75,7 +76,7 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         return self.states_
 
     def fit(self, X, y, **kwargs):
-        """A reference implementation of a fitting function for a classifier.
+        """Fit classifier
 
         Parameters
         ----------
@@ -129,6 +130,9 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         self.nodes_leaves = self.nodes_edges
         # Return the classifier
         return self
+
+    def _build(self):
+        pass
 
     def _train(self, kwargs):
         self.model_ = BayesianNetwork(
@@ -260,37 +264,38 @@ class TAN(BayesBase):
         return X, y
 
     def _build(self):
-        # est = TreeSearch(self.dataset_,
-        # root_node=self.feature_names_in_[self.head_])
-        # self.dag_ = est.estimate(
-        #     estimator_type="tan",
-        #     class_node=self.class_name_,
-        #     show_progress=self.show_progress,
-        # )
+        est = TreeSearch(
+            self.dataset_, root_node=self.feature_names_in_[self.head_]
+        )
+        self.dag_ = est.estimate(
+            estimator_type="tan",
+            class_node=self.class_name_,
+            show_progress=self.show_progress,
+        )
         # Code taken from pgmpy
-        n_jobs = -1
-        weights = TreeSearch._get_conditional_weights(
-            self.dataset_,
-            self.class_name_,
-            "mutual_info",
-            n_jobs,
-            self.show_progress,
-        )
-        # Step 4.2: Construct chow-liu DAG on {data.columns - class_node}
-        class_node_idx = np.where(self.dataset_.columns == self.class_name_)[
-            0
-        ][0]
-        weights = np.delete(weights, class_node_idx, axis=0)
-        weights = np.delete(weights, class_node_idx, axis=1)
-        reduced_columns = np.delete(self.dataset_.columns, class_node_idx)
-        D = TreeSearch._create_tree_and_dag(
-            weights, reduced_columns, self.feature_names_in_[self.head_]
-        )
-        # Step 4.3: Add edges from class_node to all other nodes.
-        D.add_edges_from(
-            [(self.class_name_, node) for node in reduced_columns]
-        )
-        self.dag_ = D
+        # n_jobs = -1
+        # weights = TreeSearch._get_conditional_weights(
+        #     self.dataset_,
+        #     self.class_name_,
+        #     "mutual_info",
+        #     n_jobs,
+        #     self.show_progress,
+        # )
+        # # Step 4.2: Construct chow-liu DAG on {data.columns - class_node}
+        # class_node_idx = np.where(self.dataset_.columns == self.class_name_)[
+        #     0
+        # ][0]
+        # weights = np.delete(weights, class_node_idx, axis=0)
+        # weights = np.delete(weights, class_node_idx, axis=1)
+        # reduced_columns = np.delete(self.dataset_.columns, class_node_idx)
+        # D = TreeSearch._create_tree_and_dag(
+        #     weights, reduced_columns, self.feature_names_in_[self.head_]
+        # )
+        # # Step 4.3: Add edges from class_node to all other nodes.
+        # D.add_edges_from(
+        #     [(self.class_name_, node) for node in reduced_columns]
+        # )
+        # self.dag_ = D
 
 
 class KDB(BayesBase):
@@ -345,7 +350,6 @@ class KDB(BayesBase):
         Compute the conditional probabilility infered by the structure of BN by
         using counts from DB, and output BN.
         """
-
         # 1. get the mutual information between each feature and the class
         mutual = mutual_info_classif(self.X_, self.y_, discrete_features=True)
         # 2. symmetric matrix where each element represents I(X, Y| class_node)
@@ -449,3 +453,36 @@ class AODE(BayesBase, BaseEnsemble):
         for index, model in enumerate(self.models_):
             result[:, index] = model.predict(dataset).values.ravel()
         return mode(result, axis=1, keepdims=False).mode.ravel()
+
+
+class KDBNew(KDB):
+    def fit(self, X, y, **kwargs):
+        self.discretizer_ = MultiDiscretizer(n_jobs=1)
+        Xd = self.discretizer_.fit_transform(X, y)
+        features = kwargs["features"]
+        states = {
+            features[i]: np.unique(Xd[:, i]).tolist()
+            for i in range(Xd.shape[1])
+        }
+        kwargs["state_names"] = states
+        return super().fit(Xd, y, **kwargs)
+
+    def predict(self, X, **kwargs):
+        return super().predict(self.discretizer_.transform(X))
+
+    def check_integrity(self, X, state_names, features):
+        for i in range(X.shape[1]):
+            if not np.array_equal(
+                np.unique(X[:, i]), np.array(state_names[features[i]])
+            ):
+                print(
+                    "i",
+                    i,
+                    "features[i]",
+                    features[i],
+                    "np.unique(X[:, i])",
+                    np.unique(X[:, i]),
+                    "np.array(state_names[features[i]])",
+                    np.array(state_names[features[i]]),
+                )
+                raise ValueError("Discretization error")
