@@ -12,7 +12,7 @@ import networkx as nx
 from pgmpy.estimators import TreeSearch, BayesianEstimator
 from pgmpy.models import BayesianNetwork
 import matplotlib.pyplot as plt
-from fimdlp.mdlp import MultiDiscretizer
+from fimdlp.mdlp import FImdlp
 from ._version import __version__
 
 
@@ -194,7 +194,6 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         """
         # Check is fit had been called
         check_is_fitted(self, ["X_", "y_", "fitted_"])
-
         # Input validation
         X = check_array(X)
         dataset = pd.DataFrame(
@@ -457,18 +456,28 @@ class AODE(BayesBase, BaseEnsemble):
 
 class KDBNew(KDB):
     def fit(self, X, y, **kwargs):
-        self.discretizer_ = MultiDiscretizer(n_jobs=1)
+        self.discretizer_ = FImdlp(n_jobs=1)
         Xd = self.discretizer_.fit_transform(X, y)
+        features = kwargs["features"]
+        self.compute_kwargs(Xd, y, kwargs)
+        # Build the model
+        super().fit(Xd, y, **kwargs)
+        self.idx_features_ = dict(list(zip(features, range(len(features)))))
+        self.proposal(Xd)
+        return self
+
+    def predict(self, X):
+        return super().predict(self.discretizer_.transform(X))
+
+    def compute_kwargs(self, Xd, y, kwargs):
         features = kwargs["features"]
         states = {
             features[i]: np.unique(Xd[:, i]).tolist()
             for i in range(Xd.shape[1])
         }
+        states[kwargs["class_name"]] = np.unique(y).tolist()
         kwargs["state_names"] = states
-        return super().fit(Xd, y, **kwargs)
-
-    def predict(self, X, **kwargs):
-        return super().predict(self.discretizer_.transform(X))
+        self.kwargs_ = kwargs
 
     def check_integrity(self, X, state_names, features):
         for i in range(X.shape[1]):
@@ -486,3 +495,23 @@ class KDBNew(KDB):
                     np.array(state_names[features[i]]),
                 )
                 raise ValueError("Discretization error")
+
+    def proposal(self, Xd):
+        """Discretize each feature with its fathers and the class"""
+        res = Xd.copy()
+        upgraded = False
+        for idx, feature in enumerate(self.feature_names_in_):
+            fathers = self.dag_.get_parents(feature)
+            if len(fathers) > 1:
+                # First remove the class name as it will be added later
+                fathers.remove(self.class_name_)
+                # Get the fathers indices
+                features = [self.idx_features_[f] for f in fathers]
+                # Update the discretization of the feature
+                res[:, idx] = self.discretizer_.join_fit(
+                    target=idx, features=features, data=Xd
+                )
+                upgraded = True
+        if upgraded:
+            self.compute_kwargs(res, self.y_, self.kwargs_)
+            super().fit(res, self.y_, **self.kwargs_)
