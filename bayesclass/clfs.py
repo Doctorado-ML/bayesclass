@@ -462,73 +462,153 @@ class AODE(BayesBase, BaseEnsemble):
         return mode(result, axis=1, keepdims=False).mode.ravel()
 
 
+class TANNew(TAN):
+    pass
+
+
 class KDBNew(KDB):
+    def __init__(self, k, theta=0.3, show_progress=False, random_state=None):
+        super().__init__(
+            k, theta, show_progress=show_progress, random_state=random_state
+        )
+        self.estimator = Proposal(self)
+
     def fit(self, X, y, **kwargs):
+        Xd, kwargs = self.estimator.discretize_train(X, y, kwargs)
+        super().fit(Xd, y, **kwargs)
+        upgraded, Xd, kwargs = self.estimator.local_discretization(kwargs)
+        if upgraded:
+            super().fit(Xd, y, **kwargs)
+
+    def predict(self, X):
+        return self.estimator.predict(X)
+
+    # def fit(self, X, y, **kwargs):
+    #     self.discretizer_ = FImdlp(n_jobs=1)
+    #     Xd = self.discretizer_.fit_transform(X, y)
+    #     features = (
+    #         kwargs["features"]
+    #         if "features" in kwargs
+    #         else self.default_feature_names(Xd.shape[1])
+    #     )
+    #     self.compute_kwargs(Xd, y, kwargs)
+    #     # Build the model
+    #     super().fit(Xd, y, **kwargs)
+    #     self.idx_features_ = dict(list(zip(features, range(len(features)))))
+    #     self.proposal(Xd)
+    #     return self
+
+    # def predict(self, X):
+    #     return super().predict(self.discretizer_.transform(X))
+
+    # def compute_kwargs(self, Xd, y, kwargs):
+    #     features = kwargs["features"]
+    #     states = {
+    #         features[i]: np.unique(Xd[:, i]).tolist()
+    #         for i in range(Xd.shape[1])
+    #     }
+    #     class_name = (
+    #         kwargs["class_name"]
+    #         if "class_name" in kwargs
+    #         else self.default_class_name()
+    #     )
+    #     states[class_name] = np.unique(y).tolist()
+    #     kwargs["state_names"] = states
+    #     self.kwargs_ = kwargs
+
+    # def check_integrity(self, X, state_names, features):
+    #     for i in range(X.shape[1]):
+    #         if not np.array_equal(
+    #             np.unique(X[:, i]), np.array(state_names[features[i]])
+    #         ):
+    #             print(
+    #                 "i",
+    #                 i,
+    #                 "features[i]",
+    #                 features[i],
+    #                 "np.unique(X[:, i])",
+    #                 np.unique(X[:, i]),
+    #                 "np.array(state_names[features[i]])",
+    #                 np.array(state_names[features[i]]),
+    #             )
+    #             raise ValueError("Discretization error")
+
+    # def proposal(self, Xd):
+    #     """Discretize each feature with its fathers and the class"""
+    #     res = Xd.copy()
+    #     upgraded = False
+    #     for idx, feature in enumerate(self.feature_names_in_):
+    #         fathers = self.dag_.get_parents(feature)
+    #         if len(fathers) > 1:
+    #             # First remove the class name as it will be added later
+    #             fathers.remove(self.class_name_)
+    #             # Get the fathers indices
+    #             features = [self.idx_features_[f] for f in fathers]
+    #             # Update the discretization of the feature
+    #             res[:, idx] = self.discretizer_.join_fit(
+    #                 target=idx, features=features, data=Xd
+    #             )
+    #             upgraded = True
+    #     if upgraded:
+    #         self.compute_kwargs(res, self.y_, self.kwargs_)
+    #         super().fit(res, self.y_, **self.kwargs_)
+
+
+class Proposal:
+    def __init__(self, estimator):
+        self.estimator = estimator
+
+    def discretize_train(self, X, y, kwargs):
         self.discretizer_ = FImdlp(n_jobs=1)
-        Xd = self.discretizer_.fit_transform(X, y)
+        self.Xd = self.discretizer_.fit_transform(X, y)
+        kwargs = self.compute_kwargs(y, kwargs)
+        return self.Xd, kwargs
+
+    def local_discretization(self, kwargs):
+        features = kwargs["features"]
+        self.idx_features_ = dict(list(zip(features, range(len(features)))))
+        return self._local_discretization(kwargs)
+
+    def predict(self, X):
+        return self.estimator.predict(self.discretizer_.transform(X))
+
+    def compute_kwargs(self, y, kwargs):
         features = (
             kwargs["features"]
             if "features" in kwargs
-            else self.default_feature_names(Xd.shape[1])
+            else self.estimator.default_feature_names(self.Xd.shape[1])
         )
-        self.compute_kwargs(Xd, y, kwargs)
-        # Build the model
-        super().fit(Xd, y, **kwargs)
-        self.idx_features_ = dict(list(zip(features, range(len(features)))))
-        self.proposal(Xd)
-        return self
-
-    def predict(self, X):
-        return super().predict(self.discretizer_.transform(X))
-
-    def compute_kwargs(self, Xd, y, kwargs):
-        features = kwargs["features"]
         states = {
-            features[i]: np.unique(Xd[:, i]).tolist()
-            for i in range(Xd.shape[1])
+            features[i]: np.unique(self.Xd[:, i]).tolist()
+            for i in range(self.Xd.shape[1])
         }
         class_name = (
             kwargs["class_name"]
             if "class_name" in kwargs
-            else self.default_class_name()
+            else self.estimator.default_class_name()
         )
         states[class_name] = np.unique(y).tolist()
         kwargs["state_names"] = states
-        self.kwargs_ = kwargs
+        kwargs["features"] = features
+        kwargs["class_name"] = class_name
+        return kwargs
 
-    def check_integrity(self, X, state_names, features):
-        for i in range(X.shape[1]):
-            if not np.array_equal(
-                np.unique(X[:, i]), np.array(state_names[features[i]])
-            ):
-                print(
-                    "i",
-                    i,
-                    "features[i]",
-                    features[i],
-                    "np.unique(X[:, i])",
-                    np.unique(X[:, i]),
-                    "np.array(state_names[features[i]])",
-                    np.array(state_names[features[i]]),
-                )
-                raise ValueError("Discretization error")
-
-    def proposal(self, Xd):
+    def _local_discretization(self, kwargs):
         """Discretize each feature with its fathers and the class"""
-        res = Xd.copy()
+        res = self.Xd.copy()
         upgraded = False
-        for idx, feature in enumerate(self.feature_names_in_):
-            fathers = self.dag_.get_parents(feature)
+        for idx, feature in enumerate(self.estimator.feature_names_in_):
+            fathers = self.estimator.dag_.get_parents(feature)
             if len(fathers) > 1:
                 # First remove the class name as it will be added later
-                fathers.remove(self.class_name_)
+                fathers.remove(self.estimator.class_name_)
                 # Get the fathers indices
                 features = [self.idx_features_[f] for f in fathers]
                 # Update the discretization of the feature
                 res[:, idx] = self.discretizer_.join_fit(
-                    target=idx, features=features, data=Xd
+                    target=idx, features=features, data=self.Xd
                 )
                 upgraded = True
         if upgraded:
-            self.compute_kwargs(res, self.y_, self.kwargs_)
-            super().fit(res, self.y_, **self.kwargs_)
+            kwargs = self.compute_kwargs(res, self.estimator.y_, kwargs)
+        return upgraded, res, kwargs
