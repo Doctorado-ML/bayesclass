@@ -513,7 +513,7 @@ class Proposal:
             else self.estimator.default_feature_names(self.Xd.shape[1])
         )
         states = {
-            features[i]: np.unique(self.Xd[:, i]).tolist()
+            features[i]: self.discretizer.get_states_feature(i)
             for i in range(self.Xd.shape[1])
         }
         class_name = (
