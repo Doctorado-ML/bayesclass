@@ -532,7 +532,7 @@ class Proposal:
         kwargs = self.update_kwargs(y, kwargs)
         # Build the model
         super(self.class_type, self.estimator).fit(self.Xd, y, **kwargs)
-        self.check_integrity("f", self.Xd)
+        self.check_integrity("fit", self.Xd)
         # Local discretization based on the model
         features = kwargs["features"]
         # assign indices to feature names
@@ -543,7 +543,7 @@ class Proposal:
             super(self.class_type, self.estimator).fit(self.Xd, y, **kwargs)
 
     def predict(self, X):
-        self.check_integrity("p", self.discretizer.transform(X))
+        self.check_integrity("predict", self.discretizer.transform(X))
         return super(self.class_type, self.estimator).predict(
             self.discretizer.transform(X)
         )
