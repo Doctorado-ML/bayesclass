@@ -510,7 +510,23 @@ class KDBNew(KDB):
 
 
 class AODENew(AODE):
-    pass
+    def fit(self, X, y, **kwargs):
+        self.estimator = Proposal(self)
+        return self.estimator.fit(X, y, **kwargs)
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        check_is_fitted(self, ["X_", "y_", "fitted_"])
+        # Input validation
+        X = check_array(X)
+        n_samples = X.shape[0]
+        n_estimators = len(self.models_)
+        result = np.empty((n_samples, n_estimators))
+        dataset = pd.DataFrame(
+            X, columns=self.feature_names_in_, dtype=np.int32
+        )
+        for index, model in enumerate(self.models_):
+            result[:, index] = model.predict(dataset).values.ravel()
+        return mode(result, axis=1, keepdims=False).mode.ravel()
 
 
 class Proposal:
