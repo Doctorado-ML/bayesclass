@@ -55,7 +55,6 @@ def test_KDB_nodes_edges(clf, data):
 
 def test_KDB_states(clf, data):
     assert clf.states_ == 0
-    clf = KDB(k=3, random_state=17)
     clf.fit(*data)
     assert clf.states_ == 23
     assert clf.depth_ == clf.states_

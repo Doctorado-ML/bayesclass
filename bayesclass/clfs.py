@@ -460,6 +460,21 @@ class AODE(BayesBase, BaseEnsemble):
 
 
 class TANNew(TAN):
+    def __init__(
+        self,
+        show_progress=False,
+        random_state=None,
+        discretizer_depth=1e6,
+        discretizer_length=3,
+        discretizer_cuts=0,
+    ):
+        self.discretizer_depth = discretizer_depth
+        self.discretizer_length = discretizer_length
+        self.discretizer_cuts = discretizer_cuts
+        super().__init__(
+            show_progress=show_progress, random_state=random_state
+        )
+
     def fit(self, X, y, **kwargs):
         self.estimator = Proposal(self)
         return self.estimator.fit(X, y, **kwargs)
@@ -470,6 +485,22 @@ class TANNew(TAN):
 
 
 class KDBNew(KDB):
+    def __init__(
+        self,
+        k=2,
+        show_progress=False,
+        random_state=None,
+        discretizer_depth=1e6,
+        discretizer_length=3,
+        discretizer_cuts=0,
+    ):
+        self.discretizer_depth = discretizer_depth
+        self.discretizer_length = discretizer_length
+        self.discretizer_cuts = discretizer_cuts
+        super().__init__(
+            k=k, show_progress=show_progress, random_state=random_state
+        )
+
     def fit(self, X, y, **kwargs):
         self.estimator = Proposal(self)
         return self.estimator.fit(X, y, **kwargs)
@@ -478,14 +509,25 @@ class KDBNew(KDB):
         return self.estimator.predict(X)
 
 
+class AODENew(AODE):
+    pass
+
+
 class Proposal:
     def __init__(self, estimator):
         self.estimator = estimator
         self.class_type = estimator.__class__
 
     def fit(self, X, y, **kwargs):
+        # Check parameters
+        super(self.class_type, self.estimator)._check_params(X, y, kwargs)
         # Discretize train data
-        self.discretizer = FImdlp(n_jobs=1)
+        self.discretizer = FImdlp(
+            n_jobs=1,
+            max_depth=self.estimator.discretizer_depth,
+            min_length=self.estimator.discretizer_length,
+            max_cuts=self.estimator.discretizer_cuts,
+        )
         self.Xd = self.discretizer.fit_transform(X, y)
         kwargs = self.update_kwargs(y, kwargs)
         # Build the model
