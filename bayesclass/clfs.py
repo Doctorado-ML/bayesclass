@@ -382,6 +382,18 @@ class KDB(BayesBase):
         self.dag_ = dag
 
 
+def build_spode(features, class_name):
+    """Build SPODE estimators (Super Parent One Dependent Estimator)"""
+    class_edges = [(class_name, f) for f in features]
+    for idx in range(len(features)):
+        feature_edges = [
+            (features[idx], f) for f in features if f != features[idx]
+        ]
+        feature_edges.extend(class_edges)
+        model = BayesianNetwork(feature_edges, show_progress=False)
+        yield model
+
+
 class AODE(BayesBase, BaseEnsemble):
     def __init__(self, show_progress=False, random_state=None):
         super().__init__(
@@ -416,20 +428,9 @@ class AODE(BayesBase, BaseEnsemble):
         self.dag_ = None
 
     def _train(self, kwargs):
-        """Build SPODE estimators (Super Parent One Dependent Estimator)"""
         self.models_ = []
-        class_edges = [(self.class_name_, f) for f in self.feature_names_in_]
         states = dict(state_names=kwargs.pop("state_names", []))
-        for idx in range(self.n_features_in_):
-            feature_edges = [
-                (self.feature_names_in_[idx], f)
-                for f in self.feature_names_in_
-                if f != self.feature_names_in_[idx]
-            ]
-            feature_edges.extend(class_edges)
-            model = BayesianNetwork(
-                feature_edges, show_progress=self.show_progress
-            )
+        for model in build_spode(self.feature_names_in_, self.class_name_):
             model.fit(
                 self.dataset_,
                 estimator=BayesianEstimator,
@@ -510,23 +511,37 @@ class KDBNew(KDB):
 
 
 class AODENew(AODE):
-    def fit(self, X, y, **kwargs):
-        self.estimator = Proposal(self)
-        return self.estimator.fit(X, y, **kwargs)
+    def _train(self, kwargs):
+        self.estimators_ = []
+        states = dict(state_names=kwargs.pop("state_names", []))
+        kwargs["states"] = states
+        for model in build_spode(self.feature_names_in_, self.class_name_):
+            estimator = Proposal(model)
+            self.estimators_.append(estimator.fit(self.X_, self.y_, **kwargs))
+        return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         check_is_fitted(self, ["X_", "y_", "fitted_"])
         # Input validation
         X = check_array(X)
         n_samples = X.shape[0]
-        n_estimators = len(self.models_)
+        n_estimators = len(self.estimators_)
         result = np.empty((n_samples, n_estimators))
-        dataset = pd.DataFrame(
-            X, columns=self.feature_names_in_, dtype=np.int32
-        )
-        for index, model in enumerate(self.models_):
-            result[:, index] = model.predict(dataset).values.ravel()
+        for index, model in enumerate(self.estimators_):
+            result[:, index] = model.predict(X).values.ravel()
         return mode(result, axis=1, keepdims=False).mode.ravel()
+
+    @property
+    def states_(self):
+        if hasattr(self, "fitted_"):
+            return sum(
+                [
+                    len(item)
+                    for model in self.models_
+                    for _, item in model.states.items()
+                ]
+            ) / len(self.models_)
+        return 0
 
 
 class Proposal:
@@ -557,12 +572,12 @@ class Proposal:
         if upgraded:
             kwargs = self.update_kwargs(y, kwargs)
             super(self.class_type, self.estimator).fit(self.Xd, y, **kwargs)
+        return self
 
     def predict(self, X):
-        self.check_integrity("predict", self.discretizer.transform(X))
-        return super(self.class_type, self.estimator).predict(
-            self.discretizer.transform(X)
-        )
+        Xd = self.discretizer.transform(X)
+        self.check_integrity("predict", Xd)
+        return super(self.class_type, self.estimator).predict(Xd)
 
     def update_kwargs(self, y, kwargs):
         features = (
