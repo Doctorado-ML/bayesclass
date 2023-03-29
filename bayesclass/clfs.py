@@ -382,7 +382,7 @@ class KDB(BayesBase):
         self.dag_ = dag
 
 
-def build_spode(features, class_name):
+def build_spodes(features, class_name):
     """Build SPODE estimators (Super Parent One Dependent Estimator)"""
     class_edges = [(class_name, f) for f in features]
     for idx in range(len(features)):
@@ -394,15 +394,17 @@ def build_spode(features, class_name):
         yield model
 
 
-class AODE(BayesBase, BaseEnsemble):
+class AODE(ClassifierMixin, BaseEnsemble):
     def __init__(self, show_progress=False, random_state=None):
-        super().__init__(
+        self.base_model = BayesBase(
             show_progress=show_progress, random_state=random_state
         )
+        self.show_progress = show_progress
+        self.random_state = random_state
 
     def _check_params(self, X, y, kwargs):
         expected_args = ["class_name", "features", "state_names"]
-        return self._check_params_fit(X, y, expected_args, kwargs)
+        return self.base_model._check_params_fit(X, y, expected_args, kwargs)
 
     def nodes_edges(self):
         nodes = 0
@@ -411,6 +413,30 @@ class AODE(BayesBase, BaseEnsemble):
             nodes = sum([len(x) for x in self.models_])
             edges = sum([len(x.edges()) for x in self.models_])
         return nodes, edges
+
+    def version(self):
+        return self.base_model.version()
+
+    def fit(self, X, y, **kwargs):
+        X_, y_ = self._check_params(X, y, kwargs)
+        self.class_name_ = self.base_model.class_name_
+        self.feature_names_in_ = self.base_model.feature_names_in_
+        self.classes_ = self.base_model.classes_
+        self.n_features_in_ = self.base_model.n_features_in_
+        # Store the information needed to build the model
+        self.X_ = X_
+        self.y_ = y_
+        self.dataset_ = pd.DataFrame(
+            self.X_, columns=self.feature_names_in_, dtype=np.int32
+        )
+        self.dataset_[self.class_name_] = self.y_
+        # Train the model
+        self._train(kwargs)
+        self.fitted_ = True
+        # To keep compatiblity with the benchmark platform
+        self.nodes_leaves = self.nodes_edges
+        # Return the classifier
+        return self
 
     @property
     def states_(self):
@@ -424,13 +450,14 @@ class AODE(BayesBase, BaseEnsemble):
             ) / len(self.models_)
         return 0
 
-    def _build(self):
-        self.dag_ = None
+    @property
+    def depth_(self):
+        return self.states_
 
     def _train(self, kwargs):
         self.models_ = []
         states = dict(state_names=kwargs.pop("state_names", []))
-        for model in build_spode(self.feature_names_in_, self.class_name_):
+        for model in build_spodes(self.feature_names_in_, self.class_name_):
             model.fit(
                 self.dataset_,
                 estimator=BayesianEstimator,
@@ -442,8 +469,8 @@ class AODE(BayesBase, BaseEnsemble):
     def plot(self, title=""):
         warnings.simplefilter("ignore", UserWarning)
         for idx, model in enumerate(self.models_):
-            self.model_ = model
-            super().plot(title=f"{idx} {title}")
+            self.base_model.model_ = model
+            self.base_model.plot(title=f"{idx} {title}")
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         check_is_fitted(self, ["X_", "y_", "fitted_"])
@@ -481,7 +508,6 @@ class TANNew(TAN):
         return self.estimator.fit(X, y, **kwargs)
 
     def predict(self, X):
-        self.plot()
         return self.estimator.predict(X)
 
 
@@ -510,13 +536,28 @@ class KDBNew(KDB):
         return self.estimator.predict(X)
 
 
-class AODENew(AODE):
+class SpodeNew(BayesBase):
+    """This class implements a classifier for the SPODE algorithm similar to TANNew and KDBNew"""
+
+    def __init__(self, random_state, show_progress, structure):
+        super().__init__(
+            random_state=random_state, show_progress=show_progress
+        )
+        self.structure = structure
+
+
+class AODENew:
+    def __init__(self, show_progress=False, random_state=None):
+        self.show_progress = show_progress
+        self.random_state = random_state
+
     def _train(self, kwargs):
         self.estimators_ = []
         states = dict(state_names=kwargs.pop("state_names", []))
         kwargs["states"] = states
-        for model in build_spode(self.feature_names_in_, self.class_name_):
-            estimator = Proposal(model)
+        for spode in build_spodes(self.feature_names_in_, self.class_name_):
+            model = SpodeNew(self.random_state, self.show_progress, spode)
+            estimator = Proposal(spode)
             self.estimators_.append(estimator.fit(self.X_, self.y_, **kwargs))
         return self
 
@@ -551,7 +592,8 @@ class Proposal:
 
     def fit(self, X, y, **kwargs):
         # Check parameters
-        super(self.class_type, self.estimator)._check_params(X, y, kwargs)
+        self.estimator._check_params(X, y, kwargs)
+
         # Discretize train data
         self.discretizer = FImdlp(
             n_jobs=1,
@@ -563,7 +605,6 @@ class Proposal:
         kwargs = self.update_kwargs(y, kwargs)
         # Build the model
         super(self.class_type, self.estimator).fit(self.Xd, y, **kwargs)
-        self.check_integrity("fit", self.Xd)
         # Local discretization based on the model
         features = kwargs["features"]
         # assign indices to feature names
