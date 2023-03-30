@@ -650,6 +650,7 @@ class Proposal:
         # assign indices to feature names
         self.idx_features_ = dict(list(zip(features, range(len(features)))))
         upgraded, self.Xd = self._local_discretization()
+        # self.check_integrity("fit", self.Xd)
         if upgraded:
             kwargs = self.update_kwargs(y, kwargs)
             super(self.class_type, self.estimator).fit(self.Xd, y, **kwargs)
@@ -662,7 +663,7 @@ class Proposal:
         # Input validation
         X = check_array(X)
         Xd = self.discretizer.transform(X)
-        self.check_integrity("predict", Xd)
+        # self.check_integrity("predict", Xd)
         return super(self.class_type, self.estimator).predict(Xd)
 
     def update_kwargs(self, y, kwargs):
@@ -712,20 +713,20 @@ class Proposal:
                 upgraded = True
         return upgraded, res
 
-    def check_integrity(self, source, X):
-        # print(f"Checking integrity of {source} data")
-        for i in range(X.shape[1]):
-            if not set(np.unique(X[:, i]).tolist()).issubset(
-                set(self.state_names_[self.features_[i]])
-            ):
-                print(
-                    "i",
-                    i,
-                    "features[i]",
-                    self.features_[i],
-                    "np.unique(X[:, i])",
-                    np.unique(X[:, i]),
-                    "np.array(state_names[features[i]])",
-                    np.array(self.state_names_[self.features_[i]]),
-                )
-                raise ValueError("Discretization error")
+    # def check_integrity(self, source, X):
+    #     # print(f"Checking integrity of {source} data")
+    #     for i in range(X.shape[1]):
+    #         if not set(np.unique(X[:, i]).tolist()).issubset(
+    #             set(self.state_names_[self.features_[i]])
+    #         ):
+    #             print(
+    #                 "i",
+    #                 i,
+    #                 "features[i]",
+    #                 self.features_[i],
+    #                 "np.unique(X[:, i])",
+    #                 np.unique(X[:, i]),
+    #                 "np.array(state_names[features[i]])",
+    #                 np.array(self.state_names_[self.features_[i]]),
+    #             )
+    #             raise ValueError("Discretization error")
