@@ -40,7 +40,9 @@ def test_AODENew_default_hyperparameters(data, clf):
 
 
 @image_comparison(
-    baseline_images=["line_dashes_AODE"], remove_text=True, extensions=["png"]
+    baseline_images=["line_dashes_AODENew"],
+    remove_text=True,
+    extensions=["png"],
 )
 def test_AODENew_plot(data, clf):
     # mpl_test_settings will automatically clean these internal side effects
@@ -64,7 +66,7 @@ def test_AODENew_nodes_edges(clf, data):
 def test_AODENew_states(clf, data):
     assert clf.states_ == 0
     clf.fit(*data)
-    assert clf.states_ == 23
+    assert clf.states_ == 22.75
     assert clf.depth_ == clf.states_
 
 

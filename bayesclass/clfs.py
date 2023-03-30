@@ -607,25 +607,23 @@ class AODENew(AODE):
     def states_(self):
         if hasattr(self, "fitted_"):
             return sum(
-                [
-                    len(item)
-                    for model in self.models_
-                    for _, item in model.states.items()
-                ]
+                [model.estimator.states_ for model in self.models_]
             ) / len(self.models_)
         return 0
 
-    @property
-    def depth_(self):
-        return self.states_
-
     def nodes_edges(self):
-        nodes = 0
-        edges = 0
+        nodes = [0]
+        edges = [0]
         if hasattr(self, "fitted_"):
-            nodes = sum([len(x.estimator.dag_) for x in self.models_])
-            edges = sum([len(x.estimator.dag_.edges()) for x in self.models_])
-        return nodes, edges
+            nodes, edges = zip(
+                *[model.estimator.nodes_edges() for model in self.models_]
+            )
+        return sum(nodes), sum(edges)
+
+    def plot(self, title=""):
+        warnings.simplefilter("ignore", UserWarning)
+        for idx, model in enumerate(self.models_):
+            model.estimator.plot(title=f"{idx} {title}")
 
 
 class Proposal:
