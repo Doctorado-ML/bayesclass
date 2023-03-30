@@ -539,37 +539,68 @@ class KDBNew(KDB):
 class SpodeNew(BayesBase):
     """This class implements a classifier for the SPODE algorithm similar to TANNew and KDBNew"""
 
-    def __init__(self, random_state, show_progress, structure):
+    def __init__(
+        self,
+        random_state,
+        show_progress,
+        discretizer_depth=1e6,
+        discretizer_length=3,
+        discretizer_cuts=0,
+    ):
         super().__init__(
             random_state=random_state, show_progress=show_progress
         )
-        self.structure = structure
+        self.discretizer_depth = discretizer_depth
+        self.discretizer_length = discretizer_length
+        self.discretizer_cuts = discretizer_cuts
+
+    def _check_params(self, X, y, kwargs):
+        expected_args = ["class_name", "features", "state_names"]
+        return self._check_params_fit(X, y, expected_args, kwargs)
+
+    def _build(self):
+        ...
 
 
-class AODENew:
-    def __init__(self, show_progress=False, random_state=None):
-        self.show_progress = show_progress
-        self.random_state = random_state
+class AODENew(AODE):
+    def __init__(
+        self,
+        random_state=None,
+        show_progress=False,
+        discretizer_depth=1e6,
+        discretizer_length=3,
+        discretizer_cuts=0,
+    ):
+        self.discretizer_depth = discretizer_depth
+        self.discretizer_length = discretizer_length
+        self.discretizer_cuts = discretizer_cuts
+        super().__init__(
+            show_progress=show_progress, random_state=random_state
+        )
 
     def _train(self, kwargs):
-        self.estimators_ = []
-        states = dict(state_names=kwargs.pop("state_names", []))
-        kwargs["states"] = states
-        for spode in build_spodes(self.feature_names_in_, self.class_name_):
-            model = SpodeNew(self.random_state, self.show_progress, spode)
+        self.models_ = []
+        for model in build_spodes(self.feature_names_in_, self.class_name_):
+            spode = SpodeNew(
+                random_state=self.random_state,
+                show_progress=self.show_progress,
+                discretizer_cuts=self.discretizer_cuts,
+                discretizer_depth=self.discretizer_depth,
+                discretizer_length=self.discretizer_length,
+            )
+            spode.dag_ = model
             estimator = Proposal(spode)
-            self.estimators_.append(estimator.fit(self.X_, self.y_, **kwargs))
-        return self
+            self.models_.append(estimator.fit(self.X_, self.y_, **kwargs))
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         check_is_fitted(self, ["X_", "y_", "fitted_"])
         # Input validation
         X = check_array(X)
         n_samples = X.shape[0]
-        n_estimators = len(self.estimators_)
+        n_estimators = len(self.models_)
         result = np.empty((n_samples, n_estimators))
-        for index, model in enumerate(self.estimators_):
-            result[:, index] = model.predict(X).values.ravel()
+        for index, model in enumerate(self.models_):
+            result[:, index] = model.predict(X)
         return mode(result, axis=1, keepdims=False).mode.ravel()
 
     @property
@@ -584,6 +615,18 @@ class AODENew:
             ) / len(self.models_)
         return 0
 
+    @property
+    def depth_(self):
+        return self.states_
+
+    def nodes_edges(self):
+        nodes = 0
+        edges = 0
+        if hasattr(self, "fitted_"):
+            nodes = sum([len(x.estimator.dag_) for x in self.models_])
+            edges = sum([len(x.estimator.dag_.edges()) for x in self.models_])
+        return nodes, edges
+
 
 class Proposal:
     def __init__(self, estimator):
@@ -593,7 +636,6 @@ class Proposal:
     def fit(self, X, y, **kwargs):
         # Check parameters
         self.estimator._check_params(X, y, kwargs)
-
         # Discretize train data
         self.discretizer = FImdlp(
             n_jobs=1,
@@ -613,9 +655,14 @@ class Proposal:
         if upgraded:
             kwargs = self.update_kwargs(y, kwargs)
             super(self.class_type, self.estimator).fit(self.Xd, y, **kwargs)
+        self.fitted_ = True
         return self
 
     def predict(self, X):
+        # Check is fit had been called
+        check_is_fitted(self, ["fitted_"])
+        # Input validation
+        X = check_array(X)
         Xd = self.discretizer.transform(X)
         self.check_integrity("predict", Xd)
         return super(self.class_type, self.estimator).predict(Xd)
