@@ -52,8 +52,11 @@ def test_AODENew_plot(data, clf):
     clf.plot("AODE Iris")
 
 
-def test_AODENew_version(clf):
-    """Check AODE version."""
+def test_AODENew_version(clf, data):
+    """Check AODENew version."""
+    assert __version__ == clf.version()
+    dataset = load_iris(as_frame=True)
+    clf.fit(*data, features=dataset["feature_names"])
     assert __version__ == clf.version()
 
 
@@ -73,12 +76,11 @@ def test_AODENew_states(clf, data):
 def test_AODENew_classifier(data, clf):
     clf.fit(*data)
     attribs = [
-        "classes_",
-        "X_",
-        "y_",
         "feature_names_in_",
         "class_name_",
         "n_features_in_",
+        "X_",
+        "y_",
     ]
     for attr in attribs:
         assert hasattr(clf, attr)
