@@ -63,6 +63,15 @@ def test_TANNew_random_head(clf, data):
     assert clf.head_ == 3
 
 
+def test_TANNew_local_discretization(clf, data):
+    expected = [-1, [0, -1], [0, -1], [1, -1]]
+    clf.fit(*data)
+    for feature in range(4):
+        assert (
+            expected[feature] == clf.estimator_.discretizer_.target_[feature]
+        )
+
+
 def test_TANNew_classifier(data, clf):
     clf.fit(*data)
     attribs = [

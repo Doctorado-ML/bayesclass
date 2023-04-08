@@ -72,6 +72,21 @@ def test_KDBNew_classifier(data, clf):
     assert sum(y == y_pred) == 148
 
 
+def test_KDBNew_local_discretization(clf, data):
+    expected = [[1, -1], -1, [0, 1, 3, -1], [1, 0, -1]]
+    clf.fit(*data)
+    for feature in range(4):
+        computed = clf.estimator_.discretizer_.target_[feature]
+        if type(computed) == list:
+            for j, k in zip(expected[feature], computed):
+                assert j == k
+        else:
+            assert (
+                expected[feature]
+                == clf.estimator_.discretizer_.target_[feature]
+            )
+
+
 @image_comparison(
     baseline_images=["line_dashes_KDBNew"],
     remove_text=True,

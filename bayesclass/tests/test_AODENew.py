@@ -91,6 +91,28 @@ def test_AODENew_classifier(data, clf):
     assert sum(y == y_pred) == 147
 
 
+def test_AODENew_local_discretization(clf, data):
+    expected_data = [
+        [-1, [0, -1], [0, -1], [0, -1]],
+        [[1, -1], -1, [1, -1], [1, -1]],
+        [[2, -1], [2, -1], -1, [2, -1]],
+        [[3, -1], [3, -1], [3, -1], -1],
+    ]
+    clf.fit(*data)
+    for idx, estimator in enumerate(clf.estimators_):
+        expected = expected_data[idx]
+        for feature in range(4):
+            computed = estimator.discretizer_.target_[feature]
+            if type(computed) == list:
+                for j, k in zip(expected[feature], computed):
+                    assert j == k
+            else:
+                assert (
+                    expected[feature]
+                    == estimator.discretizer_.target_[feature]
+                )
+
+
 def test_AODENew_wrong_num_features(data, clf):
     with pytest.raises(
         ValueError,
