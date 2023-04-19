@@ -1,7 +1,5 @@
 import pytest
 import numpy as np
-from sklearn.datasets import load_iris
-from sklearn.preprocessing import KBinsDiscretizer
 from matplotlib.testing.decorators import image_comparison
 from matplotlib.testing.conftest import mpl_test_settings
 from pgmpy.models import BayesianNetwork
@@ -9,13 +7,6 @@ from pgmpy.models import BayesianNetwork
 
 from bayesclass.clfs import KDBNew
 from .._version import __version__
-
-
-@pytest.fixture
-def data():
-    X, y = load_iris(return_X_y=True)
-    enc = KBinsDiscretizer(encode="ordinal")
-    return enc.fit_transform(X), y
 
 
 @pytest.fixture
@@ -50,13 +41,13 @@ def test_KDBNew_version(clf):
 def test_KDBNew_nodes_edges(clf, data):
     assert clf.nodes_edges() == (0, 0)
     clf.fit(*data)
-    assert clf.nodes_leaves() == (5, 10)
+    assert clf.nodes_leaves() == (5, 9)
 
 
 def test_KDBNew_states(clf, data):
     assert clf.states_ == 0
     clf.fit(*data)
-    assert clf.states_ == 23
+    assert clf.states_ == 22
     assert clf.depth_ == clf.states_
 
 
@@ -69,14 +60,15 @@ def test_KDBNew_classifier(data, clf):
     y = data[1]
     y_pred = clf.predict(X)
     assert y_pred.shape == (X.shape[0],)
-    assert sum(y == y_pred) == 148
+    assert sum(y == y_pred) == 145
 
 
 def test_KDBNew_local_discretization(clf, data):
-    expected = [[1, -1], -1, [0, 1, 3, -1], [1, 0, -1]]
+    expected = [[1, -1], -1, [0, 1, 3, -1], [1, -1]]
     clf.fit(*data)
     for feature in range(4):
         computed = clf.estimator_.discretizer_.target_[feature]
+        print("computed:", computed)
         if type(computed) == list:
             for j, k in zip(expected[feature], computed):
                 assert j == k
@@ -92,11 +84,10 @@ def test_KDBNew_local_discretization(clf, data):
     remove_text=True,
     extensions=["png"],
 )
-def test_KDBNew_plot(data, clf):
+def test_KDBNew_plot(data, features, class_name, clf):
     # mpl_test_settings will automatically clean these internal side effects
     mpl_test_settings
-    dataset = load_iris(as_frame=True)
-    clf.fit(*data, features=dataset["feature_names"])
+    clf.fit(*data, features=features, class_name=class_name)
     clf.plot("KDBNew Iris")
 
 

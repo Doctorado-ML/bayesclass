@@ -1,6 +1,5 @@
 import pytest
 import numpy as np
-from sklearn.datasets import load_iris
 from sklearn.preprocessing import KBinsDiscretizer
 from matplotlib.testing.decorators import image_comparison
 from matplotlib.testing.conftest import mpl_test_settings
@@ -12,18 +11,11 @@ from .._version import __version__
 
 
 @pytest.fixture
-def data():
-    X, y = load_iris(return_X_y=True)
-    enc = KBinsDiscretizer(encode="ordinal")
-    return enc.fit_transform(X), y
-
-
-@pytest.fixture
 def clf():
     return KDB(k=3)
 
 
-def test_KDB_default_hyperparameters(data, clf):
+def test_KDB_default_hyperparameters(data_disc, clf):
     # Test default values of hyperparameters
     assert not clf.show_progress
     assert clf.random_state is None
@@ -32,7 +24,7 @@ def test_KDB_default_hyperparameters(data, clf):
     assert clf.show_progress
     assert clf.random_state == 17
     assert clf.k == 3
-    clf.fit(*data)
+    clf.fit(*data_disc)
     assert clf.class_name_ == "class"
     assert clf.feature_names_in_ == [
         "feature_0",
@@ -47,57 +39,56 @@ def test_KDB_version(clf):
     assert __version__ == clf.version()
 
 
-def test_KDB_nodes_edges(clf, data):
+def test_KDB_nodes_edges(clf, data_disc):
     assert clf.nodes_edges() == (0, 0)
-    clf.fit(*data)
-    assert clf.nodes_leaves() == (5, 10)
+    clf.fit(*data_disc)
+    assert clf.nodes_leaves() == (5, 9)
 
 
-def test_KDB_states(clf, data):
+def test_KDB_states(clf, data_disc):
     assert clf.states_ == 0
-    clf.fit(*data)
-    assert clf.states_ == 23
+    clf.fit(*data_disc)
+    assert clf.states_ == 19
     assert clf.depth_ == clf.states_
 
 
-def test_KDB_classifier(data, clf):
-    clf.fit(*data)
+def test_KDB_classifier(data_disc, clf):
+    clf.fit(*data_disc)
     attribs = ["classes_", "X_", "y_", "feature_names_in_", "class_name_"]
     for attr in attribs:
         assert hasattr(clf, attr)
-    X = data[0]
-    y = data[1]
+    X = data_disc[0]
+    y = data_disc[1]
     y_pred = clf.predict(X)
     assert y_pred.shape == (X.shape[0],)
-    assert sum(y == y_pred) == 148
+    assert sum(y == y_pred) == 146
 
 
 @image_comparison(
     baseline_images=["line_dashes_KDB"], remove_text=True, extensions=["png"]
 )
-def test_KDB_plot(data, clf):
+def test_KDB_plot(data_disc, features, clf):
     # mpl_test_settings will automatically clean these internal side effects
     mpl_test_settings
-    dataset = load_iris(as_frame=True)
-    clf.fit(*data, features=dataset["feature_names"])
+    clf.fit(*data_disc, features=features)
     clf.plot("KDB Iris")
 
 
-def test_KDB_wrong_num_features(data, clf):
+def test_KDB_wrong_num_features(data_disc, clf):
     with pytest.raises(
         ValueError,
         match="Number of features does not match the number of columns in X",
     ):
-        clf.fit(*data, features=["feature_1", "feature_2"])
+        clf.fit(*data_disc, features=["feature_1", "feature_2"])
 
 
-def test_KDB_wrong_hyperparam(data, clf):
+def test_KDB_wrong_hyperparam(data_disc, clf):
     with pytest.raises(ValueError, match="Unexpected argument: wrong_param"):
-        clf.fit(*data, wrong_param="wrong_param")
+        clf.fit(*data_disc, wrong_param="wrong_param")
 
 
-def test_KDB_error_size_predict(data, clf):
-    X, y = data
+def test_KDB_error_size_predict(data_disc, clf):
+    X, y = data_disc
     clf.fit(X, y)
     with pytest.raises(ValueError):
         X_diff_size = np.ones((10, X.shape[1] + 1))

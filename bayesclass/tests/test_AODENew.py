@@ -1,20 +1,11 @@
 import pytest
 import numpy as np
-from sklearn.datasets import load_iris
-from sklearn.preprocessing import KBinsDiscretizer
 from matplotlib.testing.decorators import image_comparison
 from matplotlib.testing.conftest import mpl_test_settings
 
 
 from bayesclass.clfs import AODENew
 from .._version import __version__
-
-
-@pytest.fixture
-def data():
-    X, y = load_iris(return_X_y=True)
-    enc = KBinsDiscretizer(encode="ordinal")
-    return enc.fit_transform(X), y
 
 
 @pytest.fixture
@@ -44,19 +35,17 @@ def test_AODENew_default_hyperparameters(data, clf):
     remove_text=True,
     extensions=["png"],
 )
-def test_AODENew_plot(data, clf):
+def test_AODENew_plot(data, features, clf):
     # mpl_test_settings will automatically clean these internal side effects
     mpl_test_settings
-    dataset = load_iris(as_frame=True)
-    clf.fit(*data, features=dataset["feature_names"])
+    clf.fit(*data, features=features)
     clf.plot("AODE Iris")
 
 
 def test_AODENew_version(clf, data):
     """Check AODENew version."""
     assert __version__ == clf.version()
-    dataset = load_iris(as_frame=True)
-    clf.fit(*data, features=dataset["feature_names"])
+    clf.fit(*data)
     assert __version__ == clf.version()
 
 
@@ -69,7 +58,7 @@ def test_AODENew_nodes_edges(clf, data):
 def test_AODENew_states(clf, data):
     assert clf.states_ == 0
     clf.fit(*data)
-    assert clf.states_ == 22.75
+    assert clf.states_ == 17.75
     assert clf.depth_ == clf.states_
 
 
@@ -88,17 +77,17 @@ def test_AODENew_classifier(data, clf):
     y = data[1]
     y_pred = clf.predict(X)
     assert y_pred.shape == (X.shape[0],)
-    assert sum(y == y_pred) == 147
+    assert sum(y == y_pred) == 146
 
 
-def test_AODENew_local_discretization(clf, data):
+def test_AODENew_local_discretization(clf, data_disc):
     expected_data = [
         [-1, [0, -1], [0, -1], [0, -1]],
         [[1, -1], -1, [1, -1], [1, -1]],
         [[2, -1], [2, -1], -1, [2, -1]],
         [[3, -1], [3, -1], [3, -1], -1],
     ]
-    clf.fit(*data)
+    clf.fit(*data_disc)
     for idx, estimator in enumerate(clf.estimators_):
         expected = expected_data[idx]
         for feature in range(4):

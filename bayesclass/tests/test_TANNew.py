@@ -1,20 +1,11 @@
 import pytest
 import numpy as np
-from sklearn.datasets import load_iris
-from sklearn.preprocessing import KBinsDiscretizer
 from matplotlib.testing.decorators import image_comparison
 from matplotlib.testing.conftest import mpl_test_settings
 
 
 from bayesclass.clfs import TANNew
 from .._version import __version__
-
-
-@pytest.fixture
-def data():
-    X, y = load_iris(return_X_y=True)
-    enc = KBinsDiscretizer(encode="ordinal")
-    return enc.fit_transform(X), y
 
 
 @pytest.fixture
@@ -54,7 +45,7 @@ def test_TANNew_nodes_edges(clf, data):
 def test_TANNew_states(clf, data):
     assert clf.states_ == 0
     clf.fit(*data)
-    assert clf.states_ == 22
+    assert clf.states_ == 18
     assert clf.depth_ == clf.states_
 
 
@@ -88,7 +79,7 @@ def test_TANNew_classifier(data, clf):
     y = data[1]
     y_pred = clf.predict(X)
     assert y_pred.shape == (X.shape[0],)
-    assert sum(y == y_pred) == 145
+    assert sum(y == y_pred) == 146
 
 
 @image_comparison(
@@ -96,11 +87,10 @@ def test_TANNew_classifier(data, clf):
     remove_text=True,
     extensions=["png"],
 )
-def test_TANNew_plot(data, clf):
+def test_TANNew_plot(data, features, clf):
     # mpl_test_settings will automatically clean these internal side effects
     mpl_test_settings
-    dataset = load_iris(as_frame=True)
-    clf.fit(*data, features=dataset["feature_names"], head=0)
+    clf.fit(*data, features=features, head=0)
     clf.plot("TANNew Iris head=0")
 
 

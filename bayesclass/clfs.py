@@ -47,6 +47,12 @@ class BayesBase(BaseEstimator, ClassifierMixin):
     def default_class_name():
         return "class"
 
+    def build_dataset(self):
+        self.dataset_ = pd.DataFrame(
+            self.X_, columns=self.feature_names_in_, dtype=np.int32
+        )
+        self.dataset_[self.class_name_] = self.y_
+
     def _check_params_fit(self, X, y, expected_args, kwargs):
         """Check the common parameters passed to fit"""
         # Check that X and y have correct shape
@@ -64,6 +70,10 @@ class BayesBase(BaseEstimator, ClassifierMixin):
             else:
                 raise ValueError(f"Unexpected argument: {key}")
         self.feature_names_in_ = self.features_
+        # used for local discretization
+        self.indexed_features_ = {
+            feature: i for i, feature in enumerate(self.features_)
+        }
         if self.random_state is not None:
             random.seed(self.random_state)
         if len(self.feature_names_in_) != X.shape[1]:
@@ -125,10 +135,7 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         # Store the information needed to build the model
         self.X_ = X_
         self.y_ = y_
-        self.dataset_ = pd.DataFrame(
-            self.X_, columns=self.feature_names_in_, dtype=np.int32
-        )
-        self.dataset_[self.class_name_] = self.y_
+        self.build_dataset()
         # Build the DAG
         self._build()
         # Train the model
@@ -660,14 +667,8 @@ class Proposal(BaseEstimator):
         # Build the model
         super(self.class_type, self.estimator).fit(self.Xd, y, **kwargs)
         # Local discretization based on the model
-        features = kwargs["features"]
-        # assign indices to feature names
-        self.idx_features_ = dict(list(zip(features, range(len(features)))))
-        upgraded, self.Xd = self._local_discretization()
+        self._local_discretization()
         # self.check_integrity("fit", self.Xd)
-        if upgraded:
-            kwargs = self.update_kwargs(y, kwargs)
-            super(self.class_type, self.estimator).fit(self.Xd, y, **kwargs)
         self.fitted_ = True
         return self
 
@@ -705,27 +706,45 @@ class Proposal(BaseEstimator):
 
     def _local_discretization(self):
         """Discretize each feature with its fathers and the class"""
-        res = self.Xd.copy()
-        upgraded = False
-        # print("-" * 80)
-        for idx, feature in enumerate(self.estimator.feature_names_in_):
+        upgrade = False
+        # order of local discretization is important. no good 0, 1, 2...
+        ancestral_order = list(nx.topological_sort(self.estimator.dag_))
+        for feature in ancestral_order:
+            if feature == self.estimator.class_name_:
+                continue
+            idx = self.estimator.indexed_features_[feature]
             fathers = self.estimator.dag_.get_parents(feature)
             if len(fathers) > 1:
-                # print(
-                #     "Discretizing " + feature + " with " + str(fathers),
-                #     end=" ",
-                # )
                 # First remove the class name as it will be added later
                 fathers.remove(self.estimator.class_name_)
                 # Get the fathers indices
-                features = [self.idx_features_[f] for f in fathers]
+                features = [
+                    self.estimator.indexed_features_[f] for f in fathers
+                ]
                 # Update the discretization of the feature
-                res[:, idx] = self.discretizer_.join_fit(
-                    target=idx, features=features, data=self.Xd
+                self.Xd[:, idx] = self.discretizer_.join_fit(
+                    # each feature has to use previous discretization data=res
+                    target=idx,
+                    features=features,
+                    data=self.Xd,
                 )
-                # print(self.discretizer.y_join[:5])
-                upgraded = True
-        return upgraded, res
+                upgrade = True
+        if upgrade:
+            # Update the dataset
+            self.estimator.X_ = self.Xd
+            self.estimator.build_dataset()
+            self.state_names_ = {
+                key: self.discretizer_.get_states_feature(value)
+                for key, value in self.estimator.indexed_features_.items()
+            }
+            states = {"state_names": self.state_names_}
+            # Update the model
+            self.estimator.model_.fit(
+                self.estimator.dataset_,
+                estimator=BayesianEstimator,
+                prior_type="K2",
+                **states,
+            )
 
     # def check_integrity(self, source, X):
     #     # print(f"Checking integrity of {source} data")
