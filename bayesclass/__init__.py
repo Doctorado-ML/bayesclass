@@ -16,4 +16,6 @@ __all__ = [
     "TAN",
     "KDB",
     "AODE",
+    "KDBNew",
+    "AODENew",
 ]

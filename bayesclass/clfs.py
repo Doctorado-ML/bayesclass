@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from scipy.stats import mode
-from sklearn.base import ClassifierMixin, BaseEstimator
+from sklearn.base import clone, ClassifierMixin, BaseEstimator
 from sklearn.ensemble import BaseEnsemble
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
@@ -12,7 +12,12 @@ import networkx as nx
 from pgmpy.estimators import TreeSearch, BayesianEstimator
 from pgmpy.models import BayesianNetwork
 import matplotlib.pyplot as plt
+from fimdlp.mdlp import FImdlp
 from ._version import __version__
+
+
+def default_feature_names(num_features):
+    return [f"feature_{i}" for i in range(num_features)]
 
 
 class BayesBase(BaseEstimator, ClassifierMixin):
@@ -38,6 +43,16 @@ class BayesBase(BaseEstimator, ClassifierMixin):
             return len(self.dag_), len(self.dag_.edges())
         return 0, 0
 
+    @staticmethod
+    def default_class_name():
+        return "class"
+
+    def build_dataset(self):
+        self.dataset_ = pd.DataFrame(
+            self.X_, columns=self.feature_names_in_, dtype=np.int32
+        )
+        self.dataset_[self.class_name_] = self.y_
+
     def _check_params_fit(self, X, y, expected_args, kwargs):
         """Check the common parameters passed to fit"""
         # Check that X and y have correct shape
@@ -47,14 +62,18 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         self.classes_ = unique_labels(y)
         self.n_classes_ = self.classes_.shape[0]
         # Default values
-        self.class_name_ = "class"
-        self.features_ = [f"feature_{i}" for i in range(X.shape[1])]
+        self.class_name_ = self.default_class_name()
+        self.features_ = default_feature_names(X.shape[1])
         for key, value in kwargs.items():
             if key in expected_args:
                 setattr(self, f"{key}_", value)
             else:
                 raise ValueError(f"Unexpected argument: {key}")
         self.feature_names_in_ = self.features_
+        # used for local discretization
+        self.indexed_features_ = {
+            feature: i for i, feature in enumerate(self.features_)
+        }
         if self.random_state is not None:
             random.seed(self.random_state)
         if len(self.feature_names_in_) != X.shape[1]:
@@ -75,7 +94,7 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         return self.states_
 
     def fit(self, X, y, **kwargs):
-        """A reference implementation of a fitting function for a classifier.
+        """Fit classifier
 
         Parameters
         ----------
@@ -116,10 +135,7 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         # Store the information needed to build the model
         self.X_ = X_
         self.y_ = y_
-        self.dataset_ = pd.DataFrame(
-            self.X_, columns=self.feature_names_in_, dtype=np.int32
-        )
-        self.dataset_[self.class_name_] = self.y_
+        self.build_dataset()
         # Build the DAG
         self._build()
         # Train the model
@@ -129,6 +145,9 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         self.nodes_leaves = self.nodes_edges
         # Return the classifier
         return self
+
+    def _build(self):
+        ...
 
     def _train(self, kwargs):
         self.model_ = BayesianNetwork(
@@ -190,7 +209,6 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         """
         # Check is fit had been called
         check_is_fitted(self, ["X_", "y_", "fitted_"])
-
         # Input validation
         X = check_array(X)
         dataset = pd.DataFrame(
@@ -260,37 +278,38 @@ class TAN(BayesBase):
         return X, y
 
     def _build(self):
-        # est = TreeSearch(self.dataset_,
-        # root_node=self.feature_names_in_[self.head_])
-        # self.dag_ = est.estimate(
-        #     estimator_type="tan",
-        #     class_node=self.class_name_,
-        #     show_progress=self.show_progress,
-        # )
+        est = TreeSearch(
+            self.dataset_, root_node=self.feature_names_in_[self.head_]
+        )
+        self.dag_ = est.estimate(
+            estimator_type="tan",
+            class_node=self.class_name_,
+            show_progress=self.show_progress,
+        )
         # Code taken from pgmpy
-        n_jobs = -1
-        weights = TreeSearch._get_conditional_weights(
-            self.dataset_,
-            self.class_name_,
-            "mutual_info",
-            n_jobs,
-            self.show_progress,
-        )
-        # Step 4.2: Construct chow-liu DAG on {data.columns - class_node}
-        class_node_idx = np.where(self.dataset_.columns == self.class_name_)[
-            0
-        ][0]
-        weights = np.delete(weights, class_node_idx, axis=0)
-        weights = np.delete(weights, class_node_idx, axis=1)
-        reduced_columns = np.delete(self.dataset_.columns, class_node_idx)
-        D = TreeSearch._create_tree_and_dag(
-            weights, reduced_columns, self.feature_names_in_[self.head_]
-        )
-        # Step 4.3: Add edges from class_node to all other nodes.
-        D.add_edges_from(
-            [(self.class_name_, node) for node in reduced_columns]
-        )
-        self.dag_ = D
+        # n_jobs = -1
+        # weights = TreeSearch._get_conditional_weights(
+        #     self.dataset_,
+        #     self.class_name_,
+        #     "mutual_info",
+        #     n_jobs,
+        #     self.show_progress,
+        # )
+        # # Step 4.2: Construct chow-liu DAG on {data.columns - class_node}
+        # class_node_idx = np.where(self.dataset_.columns == self.class_name_)[
+        #     0
+        # ][0]
+        # weights = np.delete(weights, class_node_idx, axis=0)
+        # weights = np.delete(weights, class_node_idx, axis=1)
+        # reduced_columns = np.delete(self.dataset_.columns, class_node_idx)
+        # D = TreeSearch._create_tree_and_dag(
+        #     weights, reduced_columns, self.feature_names_in_[self.head_]
+        # )
+        # # Step 4.3: Add edges from class_node to all other nodes.
+        # D.add_edges_from(
+        #     [(self.class_name_, node) for node in reduced_columns]
+        # )
+        # self.dag_ = D
 
 
 class KDB(BayesBase):
@@ -323,7 +342,7 @@ class KDB(BayesBase):
                     # Loops are not allowed
                     pass
             cond_w[idx, max_minfo] = -1
-            exit_cond = num == n_edges or np.all(cond_w[idx, :] <= 0)
+            exit_cond = num == n_edges or np.all(cond_w[idx, :] <= self.theta)
 
     def _build(self):
         """
@@ -345,7 +364,6 @@ class KDB(BayesBase):
         Compute the conditional probabilility infered by the structure of BN by
         using counts from DB, and output BN.
         """
-
         # 1. get the mutual information between each feature and the class
         mutual = mutual_info_classif(self.X_, self.y_, discrete_features=True)
         # 2. symmetric matrix where each element represents I(X, Y| class_node)
@@ -354,42 +372,100 @@ class KDB(BayesBase):
         )._get_conditional_weights(
             self.dataset_, self.class_name_, show_progress=self.show_progress
         )
-        # 3.
+        # 3. Let the used variable list, S, be empty.
         S_nodes = []
-        # 4.
+        # 4. Let the BN being constructed, BN, begin with a single class node
         dag = BayesianNetwork()
         dag.add_node(self.class_name_)  # , state_names=self.classes_)
-        # 5. 5.1
+        # 5. Repeat until S includes all domain features
+        # 5.1 Select feature Xmax which is not in S and has the largest value
         for idx in np.argsort(mutual):
-            # 5.2
+            # 5.2 Add a node to BN representing Xmax.
             feature = self.feature_names_in_[idx]
             dag.add_node(feature)
-            # 5.3
+            # 5.3 Add an arc from C to Xmax in BN.
             dag.add_edge(self.class_name_, feature)
-            # 5.4
+            # 5.4 Add m = min(lSl,/c) arcs from m distinct features Xj in S
             self._add_m_edges(dag, idx, S_nodes, conditional_weights)
-            # 5.5
+            # 5.5 Add Xmax to S.
             S_nodes.append(idx)
         self.dag_ = dag
 
 
-class AODE(BayesBase, BaseEnsemble):
-    def __init__(self, show_progress=False, random_state=None):
-        super().__init__(
-            show_progress=show_progress, random_state=random_state
-        )
+def build_spodes(features, class_name):
+    """Build SPODE estimators (Super Parent One Dependent Estimator)"""
+    class_edges = [(class_name, f) for f in features]
+    for idx in range(len(features)):
+        feature_edges = [
+            (features[idx], f) for f in features if f != features[idx]
+        ]
+        feature_edges.extend(class_edges)
+        model = BayesianNetwork(feature_edges, show_progress=False)
+        yield model
 
+
+class SPODE(BayesBase):
     def _check_params(self, X, y, kwargs):
         expected_args = ["class_name", "features", "state_names"]
         return self._check_params_fit(X, y, expected_args, kwargs)
 
-    def nodes_edges(self):
-        nodes = 0
-        edges = 0
+
+class AODE(ClassifierMixin, BaseEnsemble):
+    def __init__(
+        self,
+        show_progress=False,
+        random_state=None,
+        estimator=None,
+    ):
+        self.show_progress = show_progress
+        self.random_state = random_state
+        super().__init__(estimator=estimator)
+
+    def _validate_estimator(self) -> None:
+        """Check the estimator and set the estimator_ attribute."""
+        super()._validate_estimator(
+            default=SPODE(
+                random_state=self.random_state,
+                show_progress=self.show_progress,
+            )
+        )
+
+    def fit(self, X, y, **kwargs):
+        self.n_features_in_ = X.shape[1]
+        self.feature_names_in_ = kwargs.get(
+            "features", default_feature_names(self.n_features_in_)
+        )
+        self.class_name_ = kwargs.get("class_name", "class")
+        # build estimator
+        self._validate_estimator()
+        self.X_ = X
+        self.y_ = y
+        self.estimators_ = []
+        self._train(kwargs)
+        # To keep compatiblity with the benchmark platform
+        self.fitted_ = True
+        self.nodes_leaves = self.nodes_edges
+        return self
+
+    def _train(self, kwargs):
+        for dag in build_spodes(self.feature_names_in_, self.class_name_):
+            estimator = clone(self.estimator_)
+            estimator.dag_ = estimator.model_ = dag
+            estimator.fit(self.X_, self.y_, **kwargs)
+            self.estimators_.append(estimator)
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        n_samples = X.shape[0]
+        n_estimators = len(self.estimators_)
+        result = np.empty((n_samples, n_estimators))
+        for index, estimator in enumerate(self.estimators_):
+            result[:, index] = estimator.predict(X)
+        return mode(result, axis=1, keepdims=False).mode.ravel()
+
+    def version(self):
         if hasattr(self, "fitted_"):
-            nodes = sum([len(x) for x in self.models_])
-            edges = sum([len(x.edges()) for x in self.models_])
-        return nodes, edges
+            return self.estimator_.version()
+        return SPODE(None, False).version()
 
     @property
     def states_(self):
@@ -397,54 +473,293 @@ class AODE(BayesBase, BaseEnsemble):
             return sum(
                 [
                     len(item)
-                    for model in self.models_
-                    for _, item in model.states.items()
+                    for model in self.estimators_
+                    for _, item in model.model_.states.items()
                 ]
-            ) / len(self.models_)
+            ) / len(self.estimators_)
         return 0
 
-    def _build(self):
-        self.dag_ = None
+    @property
+    def depth_(self):
+        return self.states_
 
-    def _train(self, kwargs):
-        """Build SPODE estimators (Super Parent One Dependent Estimator)"""
-        self.models_ = []
-        class_edges = [(self.class_name_, f) for f in self.feature_names_in_]
-        states = dict(state_names=kwargs.pop("state_names", []))
-        for idx in range(self.n_features_in_):
-            feature_edges = [
-                (self.feature_names_in_[idx], f)
-                for f in self.feature_names_in_
-                if f != self.feature_names_in_[idx]
-            ]
-            feature_edges.extend(class_edges)
-            model = BayesianNetwork(
-                feature_edges, show_progress=self.show_progress
-            )
-            model.fit(
-                self.dataset_,
-                estimator=BayesianEstimator,
-                prior_type="K2",
-                **states,
-            )
-            self.models_.append(model)
+    def nodes_edges(self):
+        nodes = 0
+        edges = 0
+        if hasattr(self, "fitted_"):
+            nodes = sum([len(x.dag_) for x in self.estimators_])
+            edges = sum([len(x.dag_.edges()) for x in self.estimators_])
+        return nodes, edges
 
     def plot(self, title=""):
         warnings.simplefilter("ignore", UserWarning)
-        for idx, model in enumerate(self.models_):
-            self.model_ = model
-            super().plot(title=f"{idx} {title}")
+        for idx, model in enumerate(self.estimators_):
+            model.plot(title=f"{idx} {title}")
+
+
+class TANNew(TAN):
+    def __init__(
+        self,
+        show_progress=False,
+        random_state=None,
+        discretizer_depth=1e6,
+        discretizer_length=3,
+        discretizer_cuts=0,
+    ):
+        self.discretizer_depth = discretizer_depth
+        self.discretizer_length = discretizer_length
+        self.discretizer_cuts = discretizer_cuts
+        super().__init__(
+            show_progress=show_progress, random_state=random_state
+        )
+
+    def fit(self, X, y, **kwargs):
+        self.estimator_ = Proposal(self)
+        self.estimator_.fit(X, y, **kwargs)
+        return self
+
+    def predict(self, X):
+        return self.estimator_.predict(X)
+
+
+class KDBNew(KDB):
+    def __init__(
+        self,
+        k=2,
+        show_progress=False,
+        random_state=None,
+        discretizer_depth=1e6,
+        discretizer_length=3,
+        discretizer_cuts=0,
+    ):
+        self.discretizer_depth = discretizer_depth
+        self.discretizer_length = discretizer_length
+        self.discretizer_cuts = discretizer_cuts
+        super().__init__(
+            k=k, show_progress=show_progress, random_state=random_state
+        )
+
+    def fit(self, X, y, **kwargs):
+        self.estimator_ = Proposal(self)
+        self.estimator_.fit(X, y, **kwargs)
+        return self
+
+    def predict(self, X):
+        return self.estimator_.predict(X)
+
+
+class SPODENew(SPODE):
+    """This class implements a classifier for the SPODE algorithm similar to
+    TANNew and KDBNew"""
+
+    def __init__(
+        self,
+        random_state,
+        show_progress,
+        discretizer_depth=1e6,
+        discretizer_length=3,
+        discretizer_cuts=0,
+    ):
+        super().__init__(
+            random_state=random_state, show_progress=show_progress
+        )
+        self.discretizer_depth = discretizer_depth
+        self.discretizer_length = discretizer_length
+        self.discretizer_cuts = discretizer_cuts
+
+
+class AODENew(AODE):
+    def __init__(
+        self,
+        random_state=None,
+        show_progress=False,
+        discretizer_depth=1e6,
+        discretizer_length=3,
+        discretizer_cuts=0,
+    ):
+        self.discretizer_depth = discretizer_depth
+        self.discretizer_length = discretizer_length
+        self.discretizer_cuts = discretizer_cuts
+        super().__init__(
+            random_state=random_state,
+            show_progress=show_progress,
+            estimator=Proposal(
+                SPODENew(
+                    random_state=random_state,
+                    show_progress=show_progress,
+                    discretizer_depth=discretizer_depth,
+                    discretizer_length=discretizer_length,
+                    discretizer_cuts=discretizer_cuts,
+                )
+            ),
+        )
+
+    def _train(self, kwargs):
+        for dag in build_spodes(self.feature_names_in_, self.class_name_):
+            proposal = clone(self.estimator_)
+            proposal.estimator.dag_ = proposal.estimator.model_ = dag
+            self.estimators_.append(proposal.fit(self.X_, self.y_, **kwargs))
+        self.n_estimators_ = len(self.estimators_)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         check_is_fitted(self, ["X_", "y_", "fitted_"])
         # Input validation
         X = check_array(X)
-        n_samples = X.shape[0]
-        n_estimators = len(self.models_)
-        result = np.empty((n_samples, n_estimators))
-        dataset = pd.DataFrame(
-            X, columns=self.feature_names_in_, dtype=np.int32
-        )
-        for index, model in enumerate(self.models_):
-            result[:, index] = model.predict(dataset).values.ravel()
+        result = np.empty((X.shape[0], self.n_estimators_))
+        for index, model in enumerate(self.estimators_):
+            result[:, index] = model.predict(X)
         return mode(result, axis=1, keepdims=False).mode.ravel()
+
+    @property
+    def states_(self):
+        if hasattr(self, "fitted_"):
+            return sum(
+                [
+                    len(item)
+                    for model in self.estimators_
+                    for _, item in model.estimator.model_.states.items()
+                ]
+            ) / len(self.estimators_)
+        return 0
+
+    @property
+    def depth_(self):
+        return self.states_
+
+    def nodes_edges(self):
+        nodes = 0
+        edges = 0
+        if hasattr(self, "fitted_"):
+            nodes = sum([len(x.estimator.dag_) for x in self.estimators_])
+            edges = sum(
+                [len(x.estimator.dag_.edges()) for x in self.estimators_]
+            )
+        return nodes, edges
+
+    def plot(self, title=""):
+        warnings.simplefilter("ignore", UserWarning)
+        for idx, model in enumerate(self.estimators_):
+            model.estimator.plot(title=f"{idx} {title}")
+
+    def version(self):
+        if hasattr(self, "fitted_"):
+            return self.estimator_.estimator.version()
+        return SPODENew(None, False).version()
+
+
+class Proposal(BaseEstimator):
+    def __init__(self, estimator):
+        self.estimator = estimator
+        self.class_type = estimator.__class__
+
+    def fit(self, X, y, **kwargs):
+        # Check parameters
+        self.estimator._check_params(X, y, kwargs)
+        # Discretize train data
+        self.discretizer_ = FImdlp(
+            n_jobs=1,
+            max_depth=self.estimator.discretizer_depth,
+            min_length=self.estimator.discretizer_length,
+            max_cuts=self.estimator.discretizer_cuts,
+        )
+        self.Xd = self.discretizer_.fit_transform(X, y)
+        kwargs = self.update_kwargs(y, kwargs)
+        # Build the model
+        super(self.class_type, self.estimator).fit(self.Xd, y, **kwargs)
+        # Local discretization based on the model
+        self._local_discretization()
+        # self.check_integrity("fit", self.Xd)
+        self.fitted_ = True
+        return self
+
+    def predict(self, X):
+        # Check is fit had been called
+        check_is_fitted(self, ["fitted_"])
+        # Input validation
+        X = check_array(X)
+        Xd = self.discretizer_.transform(X)
+        # self.check_integrity("predict", Xd)
+        return super(self.class_type, self.estimator).predict(Xd)
+
+    def update_kwargs(self, y, kwargs):
+        features = (
+            kwargs["features"]
+            if "features" in kwargs
+            else default_feature_names(self.Xd.shape[1])
+        )
+        states = {
+            features[i]: self.discretizer_.get_states_feature(i)
+            for i in range(self.Xd.shape[1])
+        }
+        class_name = (
+            kwargs["class_name"]
+            if "class_name" in kwargs
+            else self.estimator.default_class_name()
+        )
+        states[class_name] = np.unique(y).tolist()
+        kwargs["state_names"] = states
+        self.state_names_ = states
+        self.features_ = features
+        kwargs["features"] = features
+        kwargs["class_name"] = class_name
+        return kwargs
+
+    def _local_discretization(self):
+        """Discretize each feature with its fathers and the class"""
+        upgrade = False
+        # order of local discretization is important. no good 0, 1, 2...
+        ancestral_order = list(nx.topological_sort(self.estimator.dag_))
+        for feature in ancestral_order:
+            if feature == self.estimator.class_name_:
+                continue
+            idx = self.estimator.indexed_features_[feature]
+            fathers = self.estimator.dag_.get_parents(feature)
+            if len(fathers) > 1:
+                # First remove the class name as it will be added later
+                fathers.remove(self.estimator.class_name_)
+                # Get the fathers indices
+                features = [
+                    self.estimator.indexed_features_[f] for f in fathers
+                ]
+                # Update the discretization of the feature
+                self.Xd[:, idx] = self.discretizer_.join_fit(
+                    # each feature has to use previous discretization data=res
+                    target=idx,
+                    features=features,
+                    data=self.Xd,
+                )
+                upgrade = True
+        if upgrade:
+            # Update the dataset
+            self.estimator.X_ = self.Xd
+            self.estimator.build_dataset()
+            self.state_names_ = {
+                key: self.discretizer_.get_states_feature(value)
+                for key, value in self.estimator.indexed_features_.items()
+            }
+            states = {"state_names": self.state_names_}
+            # Update the model
+            self.estimator.model_.fit(
+                self.estimator.dataset_,
+                estimator=BayesianEstimator,
+                prior_type="K2",
+                **states,
+            )
+
+    # def check_integrity(self, source, X):
+    #     # print(f"Checking integrity of {source} data")
+    #     for i in range(X.shape[1]):
+    #         if not set(np.unique(X[:, i]).tolist()).issubset(
+    #             set(self.state_names_[self.features_[i]])
+    #         ):
+    #             print(
+    #                 "i",
+    #                 i,
+    #                 "features[i]",
+    #                 self.features_[i],
+    #                 "np.unique(X[:, i])",
+    #                 np.unique(X[:, i]),
+    #                 "np.array(state_names[features[i]])",
+    #                 np.array(self.state_names_[self.features_[i]]),
+    #             )
+    #             raise ValueError("Discretization error")

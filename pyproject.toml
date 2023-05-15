@@ -25,6 +25,7 @@ dependencies = [
   "pgmpy",
   "networkx",
   "matplotlib",
+  "fimdlp",
 ]
 requires-python = ">=3.8"
 classifiers = [
