@@ -68,7 +68,6 @@ def test_KDBNew_local_discretization(clf, data):
     clf.fit(*data)
     for feature in range(4):
         computed = clf.estimator_.discretizer_.target_[feature]
-        print("computed:", computed)
         if type(computed) == list:
             for j, k in zip(expected[feature], computed):
                 assert j == k

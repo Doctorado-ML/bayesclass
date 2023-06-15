@@ -64,6 +64,13 @@ def test_KDB_classifier(data_disc, clf):
     assert sum(y == y_pred) == 146
 
 
+def test_KDB_classifier_weighted(data_disc, clf):
+    sample_weight = [1] * data_disc[0].shape[0]
+    sample_weight[:50] = [0] * 50
+    clf.fit(*data_disc, sample_weight=sample_weight, weighted=True)
+    assert clf.score(*data_disc) == 0.64
+
+
 @image_comparison(
     baseline_images=["line_dashes_KDB"], remove_text=True, extensions=["png"]
 )

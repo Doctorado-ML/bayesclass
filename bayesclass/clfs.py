@@ -52,6 +52,8 @@ class BayesBase(BaseEstimator, ClassifierMixin):
             self.X_, columns=self.feature_names_in_, dtype=np.int32
         )
         self.dataset_[self.class_name_] = self.y_
+        if self.sample_weight_ is not None:
+            self.dataset_["_weight"] = self.sample_weight_
 
     def _check_params_fit(self, X, y, expected_args, kwargs):
         """Check the common parameters passed to fit"""
@@ -62,6 +64,8 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         self.classes_ = unique_labels(y)
         self.n_classes_ = self.classes_.shape[0]
         # Default values
+        self.weighted_ = False
+        self.sample_weight_ = None
         self.class_name_ = self.default_class_name()
         self.features_ = default_feature_names(X.shape[1])
         for key, value in kwargs.items():
@@ -80,6 +84,7 @@ class BayesBase(BaseEstimator, ClassifierMixin):
             raise ValueError(
                 "Number of features does not match the number of columns in X"
             )
+
         self.n_features_in_ = X.shape[1]
         return X, y
 
@@ -151,13 +156,14 @@ class BayesBase(BaseEstimator, ClassifierMixin):
 
     def _train(self, kwargs):
         self.model_ = BayesianNetwork(
-            self.dag_.edges(), show_progress=self.show_progress
+            self.dag_.edges()  # , show_progress=self.show_progress
         )
         states = dict(state_names=kwargs.pop("state_names", []))
         self.model_.fit(
             self.dataset_,
             estimator=BayesianEstimator,
             prior_type="K2",
+            weighted=self.weighted_,
             **states,
         )
 
@@ -321,7 +327,13 @@ class KDB(BayesBase):
         )
 
     def _check_params(self, X, y, kwargs):
-        expected_args = ["class_name", "features", "state_names"]
+        expected_args = [
+            "class_name",
+            "features",
+            "state_names",
+            "sample_weight",
+            "weighted",
+        ]
         return self._check_params_fit(X, y, expected_args, kwargs)
 
     def _add_m_edges(self, dag, idx, S_nodes, conditional_weights):
