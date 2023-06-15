@@ -18,4 +18,5 @@ __all__ = [
     "AODE",
     "KDBNew",
     "AODENew",
+    "BoostAODE",
 ]

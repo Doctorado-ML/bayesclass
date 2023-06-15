@@ -418,7 +418,13 @@ def build_spodes(features, class_name):
 
 class SPODE(BayesBase):
     def _check_params(self, X, y, kwargs):
-        expected_args = ["class_name", "features", "state_names"]
+        expected_args = [
+            "class_name",
+            "features",
+            "state_names",
+            "sample_weight",
+            "weighted",
+        ]
         return self._check_params_fit(X, y, expected_args, kwargs)
 
 
@@ -775,3 +781,29 @@ class Proposal(BaseEstimator):
     #                 np.array(self.state_names_[self.features_[i]]),
     #             )
     #             raise ValueError("Discretization error")
+
+
+class BoostAODE(AODE):
+    def fit(self, X, y, **kwargs):
+        self.n_features_in_ = X.shape[1]
+        self.feature_names_in_ = kwargs.get(
+            "features", default_feature_names(self.n_features_in_)
+        )
+        self.class_name_ = kwargs.get("class_name", "class")
+        # build estimator
+        self._validate_estimator()
+        self.X_ = X
+        self.y_ = y
+        self.estimators_ = []
+        self._train(kwargs)
+        # To keep compatiblity with the benchmark platform
+        self.fitted_ = True
+        self.nodes_leaves = self.nodes_edges
+        return self
+
+    def _train(self, kwargs):
+        for dag in build_spodes(self.feature_names_in_, self.class_name_):
+            estimator = clone(self.estimator_)
+            estimator.dag_ = estimator.model_ = dag
+            estimator.fit(self.X_, self.y_, **kwargs)
+            self.estimators_.append(estimator)
