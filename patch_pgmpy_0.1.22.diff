@@ -1,0 +1,32 @@
+diff --git a/pgmpy/models/BayesianNetwork.py b/pgmpy/models/BayesianNetwork.py
+index bd90122d..70ae38f7 100644
+--- a/pgmpy/models/BayesianNetwork.py
++++ b/pgmpy/models/BayesianNetwork.py
+@@ -27,7 +27,7 @@ class BayesianNetwork(DAG):
+     Base class for Bayesian Models.
+     """
+ 
+-    def __init__(self, ebunch=None, latents=set()):
++    def __init__(self, ebunch=None, latents=set(), show_progress=False):
+         """
+         Initializes a Bayesian Model.
+         A models stores nodes and edges with conditional probability
+@@ -95,6 +95,7 @@ class BayesianNetwork(DAG):
+         >>> len(G)  # number of nodes in graph
+         3
+         """
++        self.show_progress = show_progress
+         super(BayesianNetwork, self).__init__(ebunch=ebunch, latents=latents)
+         self.cpds = []
+         self.cardinalities = defaultdict(int)
+@@ -738,7 +739,9 @@ class BayesianNetwork(DAG):
+                     show_progress=False,
+                 )
+                 for index, data_point in tqdm(
+-                    data_unique.iterrows(), total=data_unique.shape[0]
++                    data_unique.iterrows(),
++                    total=data_unique.shape[0],
++                    disable=not self.show_progress,
+                 )
+             )
+ 
