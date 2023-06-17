@@ -10,7 +10,7 @@ from .._version import __version__
 
 @pytest.fixture
 def clf():
-    return TAN(random_state=17)
+    return TAN(random_state=17, show_progress=False)
 
 
 def test_TAN_default_hyperparameters(data_disc, clf):

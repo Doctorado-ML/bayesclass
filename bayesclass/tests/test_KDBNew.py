@@ -11,7 +11,7 @@ from .._version import __version__
 
 @pytest.fixture
 def clf():
-    return KDBNew(k=3)
+    return KDBNew(k=3, show_progress=False)
 
 
 def test_KDBNew_default_hyperparameters(data, clf):
@@ -113,7 +113,7 @@ def test_KDBNew_error_size_predict(data, clf):
 
 def test_KDBNew_dont_do_cycles():
     clf = KDBNew(k=4)
-    dag = BayesianNetwork()
+    dag = BayesianNetwork(show_progress=False)
     clf.feature_names_in_ = [
         "feature_0",
         "feature_1",

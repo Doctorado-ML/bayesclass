@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import mode
 from sklearn.base import clone, ClassifierMixin, BaseEstimator
+from sklearn.feature_selection import SelectKBest
 from sklearn.ensemble import BaseEnsemble
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
@@ -11,6 +12,7 @@ from sklearn.feature_selection import mutual_info_classif
 import networkx as nx
 from pgmpy.estimators import TreeSearch, BayesianEstimator
 from pgmpy.models import BayesianNetwork
+from pgmpy.base import DAG
 import matplotlib.pyplot as plt
 from fimdlp.mdlp import FImdlp
 from ._version import __version__
@@ -136,10 +138,8 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         >>> model.fit(train_data, train_y, features=features, class_name='E')
         TAN(random_state=17)
         """
-        X_, y_ = self._check_params(X, y, kwargs)
+        self.X_, self.y_ = self._check_params(X, y, kwargs)
         # Store the information needed to build the model
-        self.X_ = X_
-        self.y_ = y_
         self.build_dataset()
         # Build the DAG
         self._build()
@@ -152,11 +152,21 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         return self
 
     def _build(self):
+        """This method should be implemented by the subclasses to
+        build the DAG
+        """
         ...
 
     def _train(self, kwargs):
+        """Build and train a BayesianNetwork from the DAG and the dataset
+
+        Parameters
+        ----------
+        kwargs : dict
+            fit parameters
+        """
         self.model_ = BayesianNetwork(
-            self.dag_.edges()  # , show_progress=self.show_progress
+            self.dag_.edges(), show_progress=self.show_progress
         )
         states = dict(state_names=kwargs.pop("state_names", []))
         self.model_.fit(
@@ -363,7 +373,7 @@ class KDB(BayesBase):
         2. Compute class conditional mutual information I(Xi;XjIC), f or each
         pair of features Xi and Xj, where i#j.
         3. Let the used variable list, S, be empty.
-        4. Let the Bayesian network being constructed, BN, begin with a single
+        4. Let the DAG network being constructed, BN, begin with a single
         class node, C.
         5. Repeat until S includes all domain features
         5.1. Select feature Xmax which is not in S and has the largest value
@@ -386,8 +396,8 @@ class KDB(BayesBase):
         )
         # 3. Let the used variable list, S, be empty.
         S_nodes = []
-        # 4. Let the BN being constructed, BN, begin with a single class node
-        dag = BayesianNetwork()
+        # 4. Let the DAG being constructed, BN, begin with a single class node
+        dag = BayesianNetwork(show_progress=self.show_progress)
         dag.add_node(self.class_name_)  # , state_names=self.classes_)
         # 5. Repeat until S includes all domain features
         # 5.1 Select feature Xmax which is not in S and has the largest value
@@ -458,10 +468,11 @@ class AODE(ClassifierMixin, BaseEnsemble):
         self._validate_estimator()
         self.X_ = X
         self.y_ = y
+        self.n_samples_ = X.shape[0]
         self.estimators_ = []
         self._train(kwargs)
-        # To keep compatiblity with the benchmark platform
         self.fitted_ = True
+        # To keep compatiblity with the benchmark platform
         self.nodes_leaves = self.nodes_edges
         return self
 
@@ -783,27 +794,125 @@ class Proposal(BaseEstimator):
     #             raise ValueError("Discretization error")
 
 
-class BoostAODE(AODE):
+class BoostSPODE(BayesBase):
+    def _check_params(self, X, y, kwargs):
+        expected_args = [
+            "class_name",
+            "features",
+            "state_names",
+            "sample_weight",
+            "weighted",
+            "sparent",
+        ]
+        return self._check_params_fit(X, y, expected_args, kwargs)
+
+    def _build(self):
+        class_edges = [(self.class_name_, f) for f in self.feature_names_in_]
+        feature_edges = [
+            (self.sparent_, f)
+            for f in self.feature_names_in_
+            if f != self.sparent_
+        ]
+        feature_edges.extend(class_edges)
+        self.dag_ = DAG(feature_edges)
+
+    def _train(self, kwargs):
+        states = dict(state_names=kwargs.get("state_names", []))
+        self.model_ = BayesianNetwork(self.dag_.edges(), show_progress=False)
+        self.model_.fit(
+            self.dataset_,
+            estimator=BayesianEstimator,
+            prior_type="K2",
+            weighted=self.weighted_,
+            **states,
+        )
+
+
+class BoostAODE(ClassifierMixin, BaseEnsemble):
+    def __init__(
+        self,
+        show_progress=False,
+        random_state=None,
+        estimator=None,
+    ):
+        self.show_progress = show_progress
+        self.random_state = random_state
+        super().__init__(estimator=estimator)
+
+    def _validate_estimator(self) -> None:
+        """Check the estimator and set the estimator_ attribute."""
+        super()._validate_estimator(
+            default=BoostSPODE(
+                random_state=self.random_state,
+                show_progress=self.show_progress,
+            )
+        )
+
     def fit(self, X, y, **kwargs):
         self.n_features_in_ = X.shape[1]
         self.feature_names_in_ = kwargs.get(
             "features", default_feature_names(self.n_features_in_)
         )
         self.class_name_ = kwargs.get("class_name", "class")
-        # build estimator
-        self._validate_estimator()
         self.X_ = X
         self.y_ = y
+        self.n_samples_ = X.shape[0]
         self.estimators_ = []
         self._train(kwargs)
-        # To keep compatiblity with the benchmark platform
         self.fitted_ = True
+        # To keep compatiblity with the benchmark platform
         self.nodes_leaves = self.nodes_edges
         return self
 
     def _train(self, kwargs):
-        for dag in build_spodes(self.feature_names_in_, self.class_name_):
+        """Build boosted SPODEs"""
+        weights = [1 / self.n_samples_] * self.n_samples_
+        # Step 0: Set the finish condition
+        pending_features = self.feature_names_in_.copy()
+        exit_condition = len(pending_features) == 0
+        while not exit_condition:
+            # Step 1: Build ranking with mutual information
+            feature = (
+                SelectKBest(k="all")
+                .fit(self.X_, self.y_)
+                .get_feature_names_out(self.feature_names_in_)
+                .tolist()[0]
+            )
+            # Step 2: Build & train spode with the first feature as sparent
+            self._validate_estimator()
             estimator = clone(self.estimator_)
-            estimator.dag_ = estimator.model_ = dag
-            estimator.fit(self.X_, self.y_, **kwargs)
+            _args = kwargs.copy()
+            _args["sparent"] = feature
+            _args["sample_weight"] = weights
+            _args["weighted"] = True
+            _args["X"] = self.X_
+            _args["y"] = self.y_
+            # Step 2.1: build dataset
+            # Step 2.2: Train the model
+            estimator.fit(**_args)
+            # Step 3: Compute errors (epsilon sub m & alpha sub m)
+            # Explanation in https://medium.datadriveninvestor.com/understanding-adaboost-and-scikit-learns-algorithm-c8d8af5ace10
+            y_pred = estimator.predict(self.X_)
+            em = np.sum(weights * (y_pred != self.y_)) / np.sum(weights)
+            am = np.log((1 - em) / em) + np.log(self.n_classes_ - 1)
+            # Step 3.2: Update weights for next classifier
+            weights = [
+                wm * np.exp(am * (ym != y_pred))
+                for wm, ym in zip(weights, self.y_)
+            ]
+            print(weights)
+            # Step 4: Add the new model
             self.estimators_.append(estimator)
+            # Final step: Update the finish condition
+            pending_features.remove(feature)
+            exit_condition = len(pending_features) == 0
+        """
+        class_edges = [(self.class_name_, f) for f in self.feature_names_in_]
+        feature_edges = [
+            (sparent, f) for f in self.feature_names_in_ if f != sparent
+        ]
+        self.weights_ = weights.copy() if weights is not None else None
+        feature_edges.extend(class_edges)
+        self.model_ = BayesianNetwork(feature_edges, show_progress=False)
+        return self.model_
+        """
