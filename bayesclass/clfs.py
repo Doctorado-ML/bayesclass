@@ -818,6 +818,7 @@ class BoostSPODE(BayesBase):
 
     def _train(self, kwargs):
         states = dict(state_names=kwargs.get("state_names", []))
+        breakpoint()
         self.model_ = BayesianNetwork(self.dag_.edges(), show_progress=False)
         self.model_.fit(
             self.dataset_,
@@ -834,9 +835,11 @@ class BoostAODE(ClassifierMixin, BaseEnsemble):
         show_progress=False,
         random_state=None,
         estimator=None,
+        n_estimators=10,
     ):
         self.show_progress = show_progress
         self.random_state = random_state
+        self.n_estimators = n_estimators
         super().__init__(estimator=estimator)
 
     def _validate_estimator(self) -> None:
@@ -858,6 +861,7 @@ class BoostAODE(ClassifierMixin, BaseEnsemble):
         self.y_ = y
         self.n_samples_ = X.shape[0]
         self.estimators_ = []
+        self._validate_estimator()
         self._train(kwargs)
         self.fitted_ = True
         # To keep compatiblity with the benchmark platform
@@ -868,44 +872,37 @@ class BoostAODE(ClassifierMixin, BaseEnsemble):
         """Build boosted SPODEs"""
         weights = [1 / self.n_samples_] * self.n_samples_
         # Step 0: Set the finish condition
-        pending_features = self.feature_names_in_.copy()
-        exit_condition = len(pending_features) == 0
-        while not exit_condition:
+        for num in range(self.n_estimators):
             # Step 1: Build ranking with mutual information
+            # OJO MAL, ESTO NO ACTUALIZA EL RANKING CON LOS PESOS
+            # SIEMPRE VA A SACAR LO MISMO
             feature = (
-                SelectKBest(k="all")
+                SelectKBest(k=1)
                 .fit(self.X_, self.y_)
                 .get_feature_names_out(self.feature_names_in_)
                 .tolist()[0]
             )
             # Step 2: Build & train spode with the first feature as sparent
-            self._validate_estimator()
             estimator = clone(self.estimator_)
             _args = kwargs.copy()
             _args["sparent"] = feature
             _args["sample_weight"] = weights
             _args["weighted"] = True
-            _args["X"] = self.X_
-            _args["y"] = self.y_
             # Step 2.1: build dataset
             # Step 2.2: Train the model
-            estimator.fit(**_args)
+            estimator.fit(self.X_, self.y_, **_args)
             # Step 3: Compute errors (epsilon sub m & alpha sub m)
             # Explanation in https://medium.datadriveninvestor.com/understanding-adaboost-and-scikit-learns-algorithm-c8d8af5ace10
             y_pred = estimator.predict(self.X_)
             em = np.sum(weights * (y_pred != self.y_)) / np.sum(weights)
-            am = np.log((1 - em) / em) + np.log(self.n_classes_ - 1)
+            am = np.log((1 - em) / em) + np.log(estimator.n_classes_ - 1)
             # Step 3.2: Update weights for next classifier
             weights = [
                 wm * np.exp(am * (ym != y_pred))
                 for wm, ym in zip(weights, self.y_)
             ]
-            print(weights)
             # Step 4: Add the new model
             self.estimators_.append(estimator)
-            # Final step: Update the finish condition
-            pending_features.remove(feature)
-            exit_condition = len(pending_features) == 0
         """
         class_edges = [(self.class_name_, f) for f in self.feature_names_in_]
         feature_edges = [
