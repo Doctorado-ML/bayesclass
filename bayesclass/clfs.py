@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 from scipy.stats import mode
 from sklearn.base import clone, ClassifierMixin, BaseEstimator
-from sklearn.feature_selection import SelectKBest
 from sklearn.ensemble import BaseEnsemble
+from sklearn.feature_selection import mutual_info_classif
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
 from sklearn.feature_selection import mutual_info_classif
@@ -15,6 +15,7 @@ from pgmpy.models import BayesianNetwork
 from pgmpy.base import DAG
 import matplotlib.pyplot as plt
 from fimdlp.mdlp import FImdlp
+from .feature_selection import SelectKBestWeighted
 from ._version import __version__
 
 
@@ -868,6 +869,16 @@ class BoostAODE(ClassifierMixin, BaseEnsemble):
         self.nodes_leaves = self.nodes_edges
         return self
 
+    def mutual_info_classif_weighted(X, y, sample_weight):
+        # Compute the mutual information between each feature and the target
+        mi = mutual_info_classif(X, y)
+
+        # Multiply the mutual information scores with the sample weights
+        mi_weighted = mi * sample_weight
+
+        # Return the weighted mutual information scores
+        return mi_weighted
+
     def _train(self, kwargs):
         """Build boosted SPODEs"""
         weights = [1 / self.n_samples_] * self.n_samples_
@@ -877,8 +888,8 @@ class BoostAODE(ClassifierMixin, BaseEnsemble):
             # OJO MAL, ESTO NO ACTUALIZA EL RANKING CON LOS PESOS
             # SIEMPRE VA A SACAR LO MISMO
             feature = (
-                SelectKBest(k=1)
-                .fit(self.X_, self.y_)
+                SelectKBestWeighted(k=1)
+                .fit(self.X_, self.y_, weights)
                 .get_feature_names_out(self.feature_names_in_)
                 .tolist()[0]
             )
