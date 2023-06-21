@@ -891,7 +891,6 @@ class BoostAODE(ClassifierMixin, BaseEnsemble):
                 SelectKBestWeighted(k=1)
                 .fit(self.X_, self.y_, weights)
                 .get_feature_names_out(self.feature_names_in_)
-                .tolist()[0]
             )
             # Step 2: Build & train spode with the first feature as sparent
             estimator = clone(self.estimator_)
@@ -914,13 +913,3 @@ class BoostAODE(ClassifierMixin, BaseEnsemble):
             ]
             # Step 4: Add the new model
             self.estimators_.append(estimator)
-        """
-        class_edges = [(self.class_name_, f) for f in self.feature_names_in_]
-        feature_edges = [
-            (sparent, f) for f in self.feature_names_in_ if f != sparent
-        ]
-        self.weights_ = weights.copy() if weights is not None else None
-        feature_edges.extend(class_edges)
-        self.model_ = BayesianNetwork(feature_edges, show_progress=False)
-        return self.model_
-        """
