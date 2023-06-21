@@ -891,6 +891,7 @@ class BoostAODE(ClassifierMixin, BaseEnsemble):
                 SelectKBestWeighted(k=1)
                 .fit(self.X_, self.y_, weights)
                 .get_feature_names_out(self.feature_names_in_)
+                .tolist()
             )
             # Step 2: Build & train spode with the first feature as sparent
             estimator = clone(self.estimator_)
@@ -898,6 +899,7 @@ class BoostAODE(ClassifierMixin, BaseEnsemble):
             _args["sparent"] = feature
             _args["sample_weight"] = weights
             _args["weighted"] = True
+            print("I'm gonna build a spode with", feature)
             # Step 2.1: build dataset
             # Step 2.2: Train the model
             estimator.fit(self.X_, self.y_, **_args)
