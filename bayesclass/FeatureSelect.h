@@ -5,7 +5,7 @@
 #include <string>
 using namespace std;
 namespace features {
-    typedef double precision_t;
+    typedef float precision_t;
     typedef int value_t;
     typedef vector<value_t> sample_t;
     typedef vector<sample_t> samples_t;

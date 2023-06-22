@@ -100,11 +100,10 @@ namespace features {
             for (auto& [label, jointCount] : jointCounts[feat]) {
                 auto p_l_f = jointCount / count;
                 if (p_l_f > 0) {
-                    double epsilon = 1e-9;
                     if (nat)
-                        entropy_f -= p_l_f * log(p_l_f + epsilon);
+                        entropy_f -= p_l_f * log(p_l_f);
                     else
-                        entropy_f -= p_l_f * log2(p_l_f + epsilon);
+                        entropy_f -= p_l_f * log2(p_l_f);
                 }
             }
             entropy += p_f * entropy_f;
