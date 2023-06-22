@@ -16,6 +16,10 @@ lint:  ## Lint and static-check
 	flake8 bayesclass
 	mypy bayesclass
 
+feature: ## compile FeatureSelect
+	cmake -B build feature
+
+
 push:  ## Push code with tags
 	git push && git push --tags
 
