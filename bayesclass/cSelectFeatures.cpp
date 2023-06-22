@@ -766,7 +766,7 @@ static CYTHON_INLINE float __PYX_NAN() {
 #include <vector>
 #include <string.h>
 #include <string>
-#include "FeatureTest.h"
+#include "FeatureSelect.h"
 #ifdef _OPENMP
 #include <omp.h>
 #endif /* _OPENMP */
@@ -981,18 +981,18 @@ static const char *__pyx_f[] = {
 };
 
 /*--- Type declarations ---*/
-struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest;
+struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted;
 
-/* "bayesclass/cSelectFeatures.pyx":13
- *         string version()
+/* "bayesclass/cSelectFeatures.pyx":16
+ *         vector[precision_t] getScore()
  * 
- * cdef class CSelectKBest:             # <<<<<<<<<<<<<<
- *     cdef SelectKBest *thisptr
- *     def __cinit__(self, X):
+ * cdef class CSelectKBestWeighted:             # <<<<<<<<<<<<<<
+ *     cdef SelectKBestWeighted *thisptr
+ *     def __cinit__(self, X, y, weights, k, natural=False): # log or log2
  */
-struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest {
+struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted {
   PyObject_HEAD
-  featuresTest::SelectKBest *thisptr;
+  features::SelectKBestWeighted *thisptr;
 };
 
 
@@ -1060,6 +1060,10 @@ struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest {
 #define __Pyx_CLEAR(r)    do { PyObject* tmp = ((PyObject*)(r)); r = NULL; __Pyx_DECREF(tmp);} while(0)
 #define __Pyx_XCLEAR(r)   do { if((r) != NULL) {PyObject* tmp = ((PyObject*)(r)); r = NULL; __Pyx_DECREF(tmp);}} while(0)
 
+/* RaiseArgTupleInvalid.proto */
+static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
+    Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
+
 /* RaiseDoubleKeywords.proto */
 static void __Pyx_RaiseDoubleKeywordsError(const char* func_name, PyObject* kw_name);
 
@@ -1068,9 +1072,32 @@ static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject **argnames[],\
     PyObject *kwds2, PyObject *values[], Py_ssize_t num_pos_args,\
     const char* function_name);
 
-/* RaiseArgTupleInvalid.proto */
-static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
-    Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
+/* PyObjectGetAttrStr.proto */
+#if CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name);
+#else
+#define __Pyx_PyObject_GetAttrStr(o,n) PyObject_GetAttr(o,n)
+#endif
+
+/* GetBuiltinName.proto */
+static PyObject *__Pyx_GetBuiltinName(PyObject *name);
+
+/* ListCompAppend.proto */
+#if CYTHON_USE_PYLIST_INTERNALS && CYTHON_ASSUME_SAFE_MACROS
+static CYTHON_INLINE int __Pyx_ListComp_Append(PyObject* list, PyObject* x) {
+    PyListObject* L = (PyListObject*) list;
+    Py_ssize_t len = Py_SIZE(list);
+    if (likely(L->allocated > len)) {
+        Py_INCREF(x);
+        PyList_SET_ITEM(list, len, x);
+        __Pyx_SET_SIZE(list, len + 1);
+        return 0;
+    }
+    return PyList_Append(list, x);
+}
+#else
+#define __Pyx_ListComp_Append(L,x) PyList_Append(L,x)
+#endif
 
 /* PyObject_GenericGetAttrNoDict.proto */
 #if CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP && PY_VERSION_HEX < 0x03070000
@@ -1110,13 +1137,6 @@ static CYTHON_INLINE int __Pyx_object_dict_version_matches(PyObject* obj, PY_UIN
 #define __PYX_GET_DICT_VERSION(dict)  (0)
 #define __PYX_UPDATE_DICT_CACHE(dict, value, cache_var, version_var)
 #define __PYX_PY_DICT_LOOKUP_IF_MODIFIED(VAR, DICT, LOOKUP)  (VAR) = (LOOKUP);
-#endif
-
-/* PyObjectGetAttrStr.proto */
-#if CYTHON_USE_TYPE_SLOTS
-static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name);
-#else
-#define __Pyx_PyObject_GetAttrStr(o,n) PyObject_GetAttr(o,n)
 #endif
 
 /* PyThreadStateGet.proto */
@@ -1231,6 +1251,9 @@ static void __Pyx_CppExn2PyErr() {
 /* CIntFromPy.proto */
 static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *);
 
+/* CIntFromPy.proto */
+static CYTHON_INLINE size_t __Pyx_PyInt_As_size_t(PyObject *);
+
 /* CIntToPy.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value);
 
@@ -1263,9 +1286,14 @@ static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 
 /* Module declarations from 'libcpp.string' */
 
+/* Module declarations from 'libcpp' */
+
 /* Module declarations from 'bayesclass.cppSelectFeatures' */
-static PyTypeObject *__pyx_ptype_10bayesclass_17cppSelectFeatures_CSelectKBest = 0;
+static PyTypeObject *__pyx_ptype_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted = 0;
 static std::vector<int>  __pyx_convert_vector_from_py_int(PyObject *); /*proto*/
+static std::vector<std::vector<int> >  __pyx_convert_vector_from_py_std_3a__3a_vector_3c_int_3e___(PyObject *); /*proto*/
+static std::vector<features::precision_t>  __pyx_convert_vector_from_py_features_3a__3a_precision_t(PyObject *); /*proto*/
+static PyObject *__pyx_convert_vector_to_py_features_3a__3a_precision_t(const std::vector<features::precision_t>  &); /*proto*/
 static CYTHON_INLINE PyObject *__pyx_convert_PyObject_string_to_py_std__in_string(std::string const &); /*proto*/
 static CYTHON_INLINE PyObject *__pyx_convert_PyUnicode_string_to_py_std__in_string(std::string const &); /*proto*/
 static CYTHON_INLINE PyObject *__pyx_convert_PyStr_string_to_py_std__in_string(std::string const &); /*proto*/
@@ -1276,38 +1304,54 @@ extern int __pyx_module_is_main_bayesclass__cppSelectFeatures;
 int __pyx_module_is_main_bayesclass__cppSelectFeatures = 0;
 
 /* Implementation of 'bayesclass.cppSelectFeatures' */
+static PyObject *__pyx_builtin_range;
 static const char __pyx_k_X[] = "X";
+static const char __pyx_k_k[] = "k";
+static const char __pyx_k_y[] = "y";
 static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_name[] = "__name__";
 static const char __pyx_k_test[] = "__test__";
-static const char __pyx_k_CSelectKBest[] = "CSelectKBest";
+static const char __pyx_k_range[] = "range";
+static const char __pyx_k_natural[] = "natural";
+static const char __pyx_k_weights[] = "weights";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
-static PyObject *__pyx_n_s_CSelectKBest;
+static const char __pyx_k_CSelectKBestWeighted[] = "CSelectKBestWeighted";
+static PyObject *__pyx_n_s_CSelectKBestWeighted;
 static PyObject *__pyx_n_s_X;
 static PyObject *__pyx_n_s_cline_in_traceback;
+static PyObject *__pyx_n_s_k;
 static PyObject *__pyx_n_s_main;
 static PyObject *__pyx_n_s_name;
+static PyObject *__pyx_n_s_natural;
+static PyObject *__pyx_n_s_range;
 static PyObject *__pyx_n_s_test;
-static int __pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest___cinit__(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest *__pyx_v_self, PyObject *__pyx_v_X); /* proto */
-static void __pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_2__dealloc__(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_4fit(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_6get_version(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_8__reduce__(CYTHON_UNUSED struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest *__pyx_v_self); /* proto */
-static PyObject *__pyx_tp_new_10bayesclass_17cppSelectFeatures_CSelectKBest(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
+static PyObject *__pyx_n_s_weights;
+static PyObject *__pyx_n_s_y;
+static int __pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted___cinit__(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *__pyx_v_self, PyObject *__pyx_v_X, PyObject *__pyx_v_y, PyObject *__pyx_v_weights, PyObject *__pyx_v_k, PyObject *__pyx_v_natural); /* proto */
+static void __pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_2__dealloc__(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_4fit(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_6get_score(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_8get_version(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_10__reduce__(CYTHON_UNUSED struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *__pyx_v_self); /* proto */
+static PyObject *__pyx_tp_new_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 /* Late includes */
 
-/* "bayesclass/cSelectFeatures.pyx":15
- * cdef class CSelectKBest:
- *     cdef SelectKBest *thisptr
- *     def __cinit__(self, X):             # <<<<<<<<<<<<<<
- *         self.thisptr = new SelectKBest(X)
+/* "bayesclass/cSelectFeatures.pyx":18
+ * cdef class CSelectKBestWeighted:
+ *     cdef SelectKBestWeighted *thisptr
+ *     def __cinit__(self, X, y, weights, k, natural=False): # log or log2             # <<<<<<<<<<<<<<
+ *         self.thisptr = new SelectKBestWeighted(X, y, weights, k, natural)
  *     def __dealloc__(self):
  */
 
 /* Python wrapper */
-static int __pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static int __pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static int __pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_X = 0;
+  PyObject *__pyx_v_y = 0;
+  PyObject *__pyx_v_weights = 0;
+  PyObject *__pyx_v_k = 0;
+  PyObject *__pyx_v_natural = 0;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -1315,12 +1359,21 @@ static int __pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_1__cinit__(P
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__cinit__ (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_X,0};
-    PyObject* values[1] = {0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_X,&__pyx_n_s_y,&__pyx_n_s_weights,&__pyx_n_s_k,&__pyx_n_s_natural,0};
+    PyObject* values[5] = {0,0,0,0,0};
+    values[4] = ((PyObject *)Py_False);
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
+        case  5: values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
+        CYTHON_FALLTHROUGH;
+        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
+        CYTHON_FALLTHROUGH;
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        CYTHON_FALLTHROUGH;
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        CYTHON_FALLTHROUGH;
         case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
         CYTHON_FALLTHROUGH;
         case  0: break;
@@ -1331,63 +1384,106 @@ static int __pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_1__cinit__(P
         case  0:
         if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_X)) != 0)) kw_args--;
         else goto __pyx_L5_argtuple_error;
+        CYTHON_FALLTHROUGH;
+        case  1:
+        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_y)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 4, 5, 1); __PYX_ERR(0, 18, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  2:
+        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_weights)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 4, 5, 2); __PYX_ERR(0, 18, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  3:
+        if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_k)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 4, 5, 3); __PYX_ERR(0, 18, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  4:
+        if (kw_args > 0) {
+          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_natural);
+          if (value) { values[4] = value; kw_args--; }
+        }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 15, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 18, __pyx_L3_error)
       }
-    } else if (PyTuple_GET_SIZE(__pyx_args) != 1) {
-      goto __pyx_L5_argtuple_error;
     } else {
-      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+      switch (PyTuple_GET_SIZE(__pyx_args)) {
+        case  5: values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
+        CYTHON_FALLTHROUGH;
+        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
+        values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        break;
+        default: goto __pyx_L5_argtuple_error;
+      }
     }
     __pyx_v_X = values[0];
+    __pyx_v_y = values[1];
+    __pyx_v_weights = values[2];
+    __pyx_v_k = values[3];
+    __pyx_v_natural = values[4];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 15, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 4, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 18, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("bayesclass.cppSelectFeatures.CSelectKBest.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("bayesclass.cppSelectFeatures.CSelectKBestWeighted.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest___cinit__(((struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest *)__pyx_v_self), __pyx_v_X);
+  __pyx_r = __pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted___cinit__(((struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *)__pyx_v_self), __pyx_v_X, __pyx_v_y, __pyx_v_weights, __pyx_v_k, __pyx_v_natural);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest___cinit__(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest *__pyx_v_self, PyObject *__pyx_v_X) {
+static int __pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted___cinit__(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *__pyx_v_self, PyObject *__pyx_v_X, PyObject *__pyx_v_y, PyObject *__pyx_v_weights, PyObject *__pyx_v_k, PyObject *__pyx_v_natural) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
-  std::vector<int>  __pyx_t_1;
-  featuresTest::SelectKBest *__pyx_t_2;
+  std::vector<std::vector<int> >  __pyx_t_1;
+  std::vector<int>  __pyx_t_2;
+  std::vector<features::precision_t>  __pyx_t_3;
+  int __pyx_t_4;
+  bool __pyx_t_5;
+  features::SelectKBestWeighted *__pyx_t_6;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__cinit__", 0);
 
-  /* "bayesclass/cSelectFeatures.pyx":16
- *     cdef SelectKBest *thisptr
- *     def __cinit__(self, X):
- *         self.thisptr = new SelectKBest(X)             # <<<<<<<<<<<<<<
+  /* "bayesclass/cSelectFeatures.pyx":19
+ *     cdef SelectKBestWeighted *thisptr
+ *     def __cinit__(self, X, y, weights, k, natural=False): # log or log2
+ *         self.thisptr = new SelectKBestWeighted(X, y, weights, k, natural)             # <<<<<<<<<<<<<<
  *     def __dealloc__(self):
  *         del self.thisptr
  */
-  __pyx_t_1 = __pyx_convert_vector_from_py_int(__pyx_v_X); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 16, __pyx_L1_error)
+  __pyx_t_1 = __pyx_convert_vector_from_py_std_3a__3a_vector_3c_int_3e___(__pyx_v_X); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L1_error)
+  __pyx_t_2 = __pyx_convert_vector_from_py_int(__pyx_v_y); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L1_error)
+  __pyx_t_3 = __pyx_convert_vector_from_py_features_3a__3a_precision_t(__pyx_v_weights); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyInt_As_int(__pyx_v_k); if (unlikely((__pyx_t_4 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_v_natural); if (unlikely((__pyx_t_5 == ((bool)-1)) && PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L1_error)
   try {
-    __pyx_t_2 = new featuresTest::SelectKBest(__pyx_t_1);
+    __pyx_t_6 = new features::SelectKBestWeighted(__pyx_t_1, __pyx_t_2, __pyx_t_3, __pyx_t_4, __pyx_t_5);
   } catch(...) {
     __Pyx_CppExn2PyErr();
-    __PYX_ERR(0, 16, __pyx_L1_error)
+    __PYX_ERR(0, 19, __pyx_L1_error)
   }
-  __pyx_v_self->thisptr = __pyx_t_2;
+  __pyx_v_self->thisptr = __pyx_t_6;
 
-  /* "bayesclass/cSelectFeatures.pyx":15
- * cdef class CSelectKBest:
- *     cdef SelectKBest *thisptr
- *     def __cinit__(self, X):             # <<<<<<<<<<<<<<
- *         self.thisptr = new SelectKBest(X)
+  /* "bayesclass/cSelectFeatures.pyx":18
+ * cdef class CSelectKBestWeighted:
+ *     cdef SelectKBestWeighted *thisptr
+ *     def __cinit__(self, X, y, weights, k, natural=False): # log or log2             # <<<<<<<<<<<<<<
+ *         self.thisptr = new SelectKBestWeighted(X, y, weights, k, natural)
  *     def __dealloc__(self):
  */
 
@@ -1395,38 +1491,38 @@ static int __pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest___cinit__(st
   __pyx_r = 0;
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_AddTraceback("bayesclass.cppSelectFeatures.CSelectKBest.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("bayesclass.cppSelectFeatures.CSelectKBestWeighted.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "bayesclass/cSelectFeatures.pyx":17
- *     def __cinit__(self, X):
- *         self.thisptr = new SelectKBest(X)
+/* "bayesclass/cSelectFeatures.pyx":20
+ *     def __cinit__(self, X, y, weights, k, natural=False): # log or log2
+ *         self.thisptr = new SelectKBestWeighted(X, y, weights, k, natural)
  *     def __dealloc__(self):             # <<<<<<<<<<<<<<
  *         del self.thisptr
  *     def fit(self,):
  */
 
 /* Python wrapper */
-static void __pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_3__dealloc__(PyObject *__pyx_v_self); /*proto*/
-static void __pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_3__dealloc__(PyObject *__pyx_v_self) {
+static void __pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_3__dealloc__(PyObject *__pyx_v_self); /*proto*/
+static void __pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_3__dealloc__(PyObject *__pyx_v_self) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__dealloc__ (wrapper)", 0);
-  __pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_2__dealloc__(((struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest *)__pyx_v_self));
+  __pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_2__dealloc__(((struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
 }
 
-static void __pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_2__dealloc__(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest *__pyx_v_self) {
+static void __pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_2__dealloc__(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *__pyx_v_self) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__dealloc__", 0);
 
-  /* "bayesclass/cSelectFeatures.pyx":18
- *         self.thisptr = new SelectKBest(X)
+  /* "bayesclass/cSelectFeatures.pyx":21
+ *         self.thisptr = new SelectKBestWeighted(X, y, weights, k, natural)
  *     def __dealloc__(self):
  *         del self.thisptr             # <<<<<<<<<<<<<<
  *     def fit(self,):
@@ -1434,9 +1530,9 @@ static void __pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_2__dealloc_
  */
   delete __pyx_v_self->thisptr;
 
-  /* "bayesclass/cSelectFeatures.pyx":17
- *     def __cinit__(self, X):
- *         self.thisptr = new SelectKBest(X)
+  /* "bayesclass/cSelectFeatures.pyx":20
+ *     def __cinit__(self, X, y, weights, k, natural=False): # log or log2
+ *         self.thisptr = new SelectKBestWeighted(X, y, weights, k, natural)
  *     def __dealloc__(self):             # <<<<<<<<<<<<<<
  *         del self.thisptr
  *     def fit(self,):
@@ -1446,7 +1542,7 @@ static void __pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_2__dealloc_
   __Pyx_RefNannyFinishContext();
 }
 
-/* "bayesclass/cSelectFeatures.pyx":19
+/* "bayesclass/cSelectFeatures.pyx":22
  *     def __dealloc__(self):
  *         del self.thisptr
  *     def fit(self,):             # <<<<<<<<<<<<<<
@@ -1455,45 +1551,45 @@ static void __pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_2__dealloc_
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_5fit(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static PyObject *__pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_5fit(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+static PyObject *__pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_5fit(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_5fit(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("fit (wrapper)", 0);
-  __pyx_r = __pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_4fit(((struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest *)__pyx_v_self));
+  __pyx_r = __pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_4fit(((struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_4fit(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest *__pyx_v_self) {
+static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_4fit(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("fit", 0);
 
-  /* "bayesclass/cSelectFeatures.pyx":20
+  /* "bayesclass/cSelectFeatures.pyx":23
  *         del self.thisptr
  *     def fit(self,):
  *         self.thisptr.fit()             # <<<<<<<<<<<<<<
  *         return self
- *     def get_version(self):
+ *     def get_score(self):
  */
   __pyx_v_self->thisptr->fit();
 
-  /* "bayesclass/cSelectFeatures.pyx":21
+  /* "bayesclass/cSelectFeatures.pyx":24
  *     def fit(self,):
  *         self.thisptr.fit()
  *         return self             # <<<<<<<<<<<<<<
- *     def get_version(self):
- *         return self.thisptr.version()
+ *     def get_score(self):
+ *         return self.thisptr.getScore()
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(((PyObject *)__pyx_v_self));
   __pyx_r = ((PyObject *)__pyx_v_self);
   goto __pyx_L0;
 
-  /* "bayesclass/cSelectFeatures.pyx":19
+  /* "bayesclass/cSelectFeatures.pyx":22
  *     def __dealloc__(self):
  *         del self.thisptr
  *     def fit(self,):             # <<<<<<<<<<<<<<
@@ -1508,28 +1604,91 @@ static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_4fit(s
   return __pyx_r;
 }
 
-/* "bayesclass/cSelectFeatures.pyx":22
+/* "bayesclass/cSelectFeatures.pyx":25
  *         self.thisptr.fit()
  *         return self
- *     def get_version(self):             # <<<<<<<<<<<<<<
- *         return self.thisptr.version()
- *     def __reduce__(self):
+ *     def get_score(self):             # <<<<<<<<<<<<<<
+ *         return self.thisptr.getScore()
+ *     def get_version(self):
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_7get_version(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static PyObject *__pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_7get_version(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+static PyObject *__pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_7get_score(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_7get_score(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("get_version (wrapper)", 0);
-  __pyx_r = __pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_6get_version(((struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest *)__pyx_v_self));
+  __Pyx_RefNannySetupContext("get_score (wrapper)", 0);
+  __pyx_r = __pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_6get_score(((struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_6get_version(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest *__pyx_v_self) {
+static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_6get_score(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("get_score", 0);
+
+  /* "bayesclass/cSelectFeatures.pyx":26
+ *         return self
+ *     def get_score(self):
+ *         return self.thisptr.getScore()             # <<<<<<<<<<<<<<
+ *     def get_version(self):
+ *         return self.thisptr.version()
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __pyx_convert_vector_to_py_features_3a__3a_precision_t(__pyx_v_self->thisptr->getScore()); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "bayesclass/cSelectFeatures.pyx":25
+ *         self.thisptr.fit()
+ *         return self
+ *     def get_score(self):             # <<<<<<<<<<<<<<
+ *         return self.thisptr.getScore()
+ *     def get_version(self):
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("bayesclass.cppSelectFeatures.CSelectKBestWeighted.get_score", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "bayesclass/cSelectFeatures.pyx":27
+ *     def get_score(self):
+ *         return self.thisptr.getScore()
+ *     def get_version(self):             # <<<<<<<<<<<<<<
+ *         return self.thisptr.version()
+ *     def __reduce__(self):
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_9get_version(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_9get_version(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_version (wrapper)", 0);
+  __pyx_r = __pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_8get_version(((struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_8get_version(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1538,23 +1697,23 @@ static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_6get_v
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_version", 0);
 
-  /* "bayesclass/cSelectFeatures.pyx":23
- *         return self
+  /* "bayesclass/cSelectFeatures.pyx":28
+ *         return self.thisptr.getScore()
  *     def get_version(self):
  *         return self.thisptr.version()             # <<<<<<<<<<<<<<
  *     def __reduce__(self):
- *         return (CSelectKBest, ())
+ *         return (CSelectKBestWeighted, ())
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_convert_PyBytes_string_to_py_std__in_string(__pyx_v_self->thisptr->version()); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 23, __pyx_L1_error)
+  __pyx_t_1 = __pyx_convert_PyBytes_string_to_py_std__in_string(__pyx_v_self->thisptr->version()); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 28, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "bayesclass/cSelectFeatures.pyx":22
- *         self.thisptr.fit()
- *         return self
+  /* "bayesclass/cSelectFeatures.pyx":27
+ *     def get_score(self):
+ *         return self.thisptr.getScore()
  *     def get_version(self):             # <<<<<<<<<<<<<<
  *         return self.thisptr.version()
  *     def __reduce__(self):
@@ -1563,7 +1722,7 @@ static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_6get_v
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("bayesclass.cppSelectFeatures.CSelectKBest.get_version", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("bayesclass.cppSelectFeatures.CSelectKBestWeighted.get_version", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1571,28 +1730,27 @@ static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_6get_v
   return __pyx_r;
 }
 
-/* "bayesclass/cSelectFeatures.pyx":24
+/* "bayesclass/cSelectFeatures.pyx":29
  *     def get_version(self):
  *         return self.thisptr.version()
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
- *         return (CSelectKBest, ())
- * 
+ *         return (CSelectKBestWeighted, ())
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_9__reduce__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static PyObject *__pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_9__reduce__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+static PyObject *__pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_11__reduce__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_11__reduce__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__reduce__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_8__reduce__(((struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest *)__pyx_v_self));
+  __pyx_r = __pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_10__reduce__(((struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_8__reduce__(CYTHON_UNUSED struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest *__pyx_v_self) {
+static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_10__reduce__(CYTHON_UNUSED struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1601,19 +1759,17 @@ static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_8__red
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__reduce__", 0);
 
-  /* "bayesclass/cSelectFeatures.pyx":25
+  /* "bayesclass/cSelectFeatures.pyx":30
  *         return self.thisptr.version()
  *     def __reduce__(self):
- *         return (CSelectKBest, ())             # <<<<<<<<<<<<<<
- * 
- * # cdef extern from "FeatureSelect.h" namespace "features":
+ *         return (CSelectKBestWeighted, ())             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 25, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 30, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_INCREF(((PyObject *)__pyx_ptype_10bayesclass_17cppSelectFeatures_CSelectKBest));
-  __Pyx_GIVEREF(((PyObject *)__pyx_ptype_10bayesclass_17cppSelectFeatures_CSelectKBest));
-  PyTuple_SET_ITEM(__pyx_t_1, 0, ((PyObject *)__pyx_ptype_10bayesclass_17cppSelectFeatures_CSelectKBest));
+  __Pyx_INCREF(((PyObject *)__pyx_ptype_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted));
+  __Pyx_GIVEREF(((PyObject *)__pyx_ptype_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted));
+  PyTuple_SET_ITEM(__pyx_t_1, 0, ((PyObject *)__pyx_ptype_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted));
   __Pyx_INCREF(__pyx_empty_tuple);
   __Pyx_GIVEREF(__pyx_empty_tuple);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_empty_tuple);
@@ -1621,18 +1777,17 @@ static PyObject *__pyx_pf_10bayesclass_17cppSelectFeatures_12CSelectKBest_8__red
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "bayesclass/cSelectFeatures.pyx":24
+  /* "bayesclass/cSelectFeatures.pyx":29
  *     def get_version(self):
  *         return self.thisptr.version()
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
- *         return (CSelectKBest, ())
- * 
+ *         return (CSelectKBestWeighted, ())
  */
 
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("bayesclass.cppSelectFeatures.CSelectKBest.__reduce__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("bayesclass.cppSelectFeatures.CSelectKBestWeighted.__reduce__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1758,6 +1913,299 @@ static std::vector<int>  __pyx_convert_vector_from_py_int(PyObject *__pyx_v_o) {
   __Pyx_pretend_to_initialize(&__pyx_r);
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_item);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static std::vector<std::vector<int> >  __pyx_convert_vector_from_py_std_3a__3a_vector_3c_int_3e___(PyObject *__pyx_v_o) {
+  std::vector<std::vector<int> >  __pyx_v_v;
+  PyObject *__pyx_v_item = NULL;
+  std::vector<std::vector<int> >  __pyx_r;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  Py_ssize_t __pyx_t_2;
+  PyObject *(*__pyx_t_3)(PyObject *);
+  PyObject *__pyx_t_4 = NULL;
+  std::vector<int>  __pyx_t_5;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__pyx_convert_vector_from_py_std_3a__3a_vector_3c_int_3e___", 0);
+
+  /* "vector.from_py":47
+ * cdef vector[X] __pyx_convert_vector_from_py_std_3a__3a_vector_3c_int_3e___(object o) except *:
+ *     cdef vector[X] v
+ *     for item in o:             # <<<<<<<<<<<<<<
+ *         v.push_back(<X>item)
+ *     return v
+ */
+  if (likely(PyList_CheckExact(__pyx_v_o)) || PyTuple_CheckExact(__pyx_v_o)) {
+    __pyx_t_1 = __pyx_v_o; __Pyx_INCREF(__pyx_t_1); __pyx_t_2 = 0;
+    __pyx_t_3 = NULL;
+  } else {
+    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_o); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 47, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 47, __pyx_L1_error)
+  }
+  for (;;) {
+    if (likely(!__pyx_t_3)) {
+      if (likely(PyList_CheckExact(__pyx_t_1))) {
+        if (__pyx_t_2 >= PyList_GET_SIZE(__pyx_t_1)) break;
+        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(1, 47, __pyx_L1_error)
+        #else
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(1, 47, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_4);
+        #endif
+      } else {
+        if (__pyx_t_2 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
+        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(1, 47, __pyx_L1_error)
+        #else
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(1, 47, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_4);
+        #endif
+      }
+    } else {
+      __pyx_t_4 = __pyx_t_3(__pyx_t_1);
+      if (unlikely(!__pyx_t_4)) {
+        PyObject* exc_type = PyErr_Occurred();
+        if (exc_type) {
+          if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
+          else __PYX_ERR(1, 47, __pyx_L1_error)
+        }
+        break;
+      }
+      __Pyx_GOTREF(__pyx_t_4);
+    }
+    __Pyx_XDECREF_SET(__pyx_v_item, __pyx_t_4);
+    __pyx_t_4 = 0;
+
+    /* "vector.from_py":48
+ *     cdef vector[X] v
+ *     for item in o:
+ *         v.push_back(<X>item)             # <<<<<<<<<<<<<<
+ *     return v
+ * 
+ */
+    __pyx_t_5 = __pyx_convert_vector_from_py_int(__pyx_v_item); if (unlikely(PyErr_Occurred())) __PYX_ERR(1, 48, __pyx_L1_error)
+    __pyx_v_v.push_back(((std::vector<int> )__pyx_t_5));
+
+    /* "vector.from_py":47
+ * cdef vector[X] __pyx_convert_vector_from_py_std_3a__3a_vector_3c_int_3e___(object o) except *:
+ *     cdef vector[X] v
+ *     for item in o:             # <<<<<<<<<<<<<<
+ *         v.push_back(<X>item)
+ *     return v
+ */
+  }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "vector.from_py":49
+ *     for item in o:
+ *         v.push_back(<X>item)
+ *     return v             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_r = __pyx_v_v;
+  goto __pyx_L0;
+
+  /* "vector.from_py":45
+ * 
+ * @cname("__pyx_convert_vector_from_py_std_3a__3a_vector_3c_int_3e___")
+ * cdef vector[X] __pyx_convert_vector_from_py_std_3a__3a_vector_3c_int_3e___(object o) except *:             # <<<<<<<<<<<<<<
+ *     cdef vector[X] v
+ *     for item in o:
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_AddTraceback("vector.from_py.__pyx_convert_vector_from_py_std_3a__3a_vector_3c_int_3e___", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_pretend_to_initialize(&__pyx_r);
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_item);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static std::vector<features::precision_t>  __pyx_convert_vector_from_py_features_3a__3a_precision_t(PyObject *__pyx_v_o) {
+  std::vector<features::precision_t>  __pyx_v_v;
+  PyObject *__pyx_v_item = NULL;
+  std::vector<features::precision_t>  __pyx_r;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  Py_ssize_t __pyx_t_2;
+  PyObject *(*__pyx_t_3)(PyObject *);
+  PyObject *__pyx_t_4 = NULL;
+  features::precision_t __pyx_t_5;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__pyx_convert_vector_from_py_features_3a__3a_precision_t", 0);
+
+  /* "vector.from_py":47
+ * cdef vector[X] __pyx_convert_vector_from_py_features_3a__3a_precision_t(object o) except *:
+ *     cdef vector[X] v
+ *     for item in o:             # <<<<<<<<<<<<<<
+ *         v.push_back(<X>item)
+ *     return v
+ */
+  if (likely(PyList_CheckExact(__pyx_v_o)) || PyTuple_CheckExact(__pyx_v_o)) {
+    __pyx_t_1 = __pyx_v_o; __Pyx_INCREF(__pyx_t_1); __pyx_t_2 = 0;
+    __pyx_t_3 = NULL;
+  } else {
+    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_o); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 47, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 47, __pyx_L1_error)
+  }
+  for (;;) {
+    if (likely(!__pyx_t_3)) {
+      if (likely(PyList_CheckExact(__pyx_t_1))) {
+        if (__pyx_t_2 >= PyList_GET_SIZE(__pyx_t_1)) break;
+        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(1, 47, __pyx_L1_error)
+        #else
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(1, 47, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_4);
+        #endif
+      } else {
+        if (__pyx_t_2 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
+        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(1, 47, __pyx_L1_error)
+        #else
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(1, 47, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_4);
+        #endif
+      }
+    } else {
+      __pyx_t_4 = __pyx_t_3(__pyx_t_1);
+      if (unlikely(!__pyx_t_4)) {
+        PyObject* exc_type = PyErr_Occurred();
+        if (exc_type) {
+          if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
+          else __PYX_ERR(1, 47, __pyx_L1_error)
+        }
+        break;
+      }
+      __Pyx_GOTREF(__pyx_t_4);
+    }
+    __Pyx_XDECREF_SET(__pyx_v_item, __pyx_t_4);
+    __pyx_t_4 = 0;
+
+    /* "vector.from_py":48
+ *     cdef vector[X] v
+ *     for item in o:
+ *         v.push_back(<X>item)             # <<<<<<<<<<<<<<
+ *     return v
+ * 
+ */
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_item); if (unlikely((__pyx_t_5 == ((features::precision_t)-1)) && PyErr_Occurred())) __PYX_ERR(1, 48, __pyx_L1_error)
+    __pyx_v_v.push_back(((features::precision_t)__pyx_t_5));
+
+    /* "vector.from_py":47
+ * cdef vector[X] __pyx_convert_vector_from_py_features_3a__3a_precision_t(object o) except *:
+ *     cdef vector[X] v
+ *     for item in o:             # <<<<<<<<<<<<<<
+ *         v.push_back(<X>item)
+ *     return v
+ */
+  }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "vector.from_py":49
+ *     for item in o:
+ *         v.push_back(<X>item)
+ *     return v             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_r = __pyx_v_v;
+  goto __pyx_L0;
+
+  /* "vector.from_py":45
+ * 
+ * @cname("__pyx_convert_vector_from_py_features_3a__3a_precision_t")
+ * cdef vector[X] __pyx_convert_vector_from_py_features_3a__3a_precision_t(object o) except *:             # <<<<<<<<<<<<<<
+ *     cdef vector[X] v
+ *     for item in o:
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_AddTraceback("vector.from_py.__pyx_convert_vector_from_py_features_3a__3a_precision_t", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_pretend_to_initialize(&__pyx_r);
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_item);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "vector.to_py":60
+ * 
+ * @cname("__pyx_convert_vector_to_py_features_3a__3a_precision_t")
+ * cdef object __pyx_convert_vector_to_py_features_3a__3a_precision_t(vector[X]& v):             # <<<<<<<<<<<<<<
+ *     return [v[i] for i in range(v.size())]
+ * 
+ */
+
+static PyObject *__pyx_convert_vector_to_py_features_3a__3a_precision_t(const std::vector<features::precision_t>  &__pyx_v_v) {
+  size_t __pyx_v_i;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  size_t __pyx_t_2;
+  size_t __pyx_t_3;
+  size_t __pyx_t_4;
+  PyObject *__pyx_t_5 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__pyx_convert_vector_to_py_features_3a__3a_precision_t", 0);
+
+  /* "vector.to_py":61
+ * @cname("__pyx_convert_vector_to_py_features_3a__3a_precision_t")
+ * cdef object __pyx_convert_vector_to_py_features_3a__3a_precision_t(vector[X]& v):
+ *     return [v[i] for i in range(v.size())]             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 61, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __pyx_v_v.size();
+  __pyx_t_3 = __pyx_t_2;
+  for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
+    __pyx_v_i = __pyx_t_4;
+    __pyx_t_5 = PyFloat_FromDouble((__pyx_v_v[__pyx_v_i])); if (unlikely(!__pyx_t_5)) __PYX_ERR(1, 61, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_t_5))) __PYX_ERR(1, 61, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  }
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "vector.to_py":60
+ * 
+ * @cname("__pyx_convert_vector_to_py_features_3a__3a_precision_t")
+ * cdef object __pyx_convert_vector_to_py_features_3a__3a_precision_t(vector[X]& v):             # <<<<<<<<<<<<<<
+ *     return [v[i] for i in range(v.size())]
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_AddTraceback("vector.to_py.__pyx_convert_vector_to_py_features_3a__3a_precision_t", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -2011,7 +2459,7 @@ static CYTHON_INLINE PyObject *__pyx_convert_PyByteArray_string_to_py_std__in_st
   return __pyx_r;
 }
 
-static PyObject *__pyx_tp_new_10bayesclass_17cppSelectFeatures_CSelectKBest(PyTypeObject *t, PyObject *a, PyObject *k) {
+static PyObject *__pyx_tp_new_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted(PyTypeObject *t, PyObject *a, PyObject *k) {
   PyObject *o;
   if (likely((t->tp_flags & Py_TPFLAGS_IS_ABSTRACT) == 0)) {
     o = (*t->tp_alloc)(t, 0);
@@ -2019,14 +2467,14 @@ static PyObject *__pyx_tp_new_10bayesclass_17cppSelectFeatures_CSelectKBest(PyTy
     o = (PyObject *) PyBaseObject_Type.tp_new(t, __pyx_empty_tuple, 0);
   }
   if (unlikely(!o)) return 0;
-  if (unlikely(__pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_1__cinit__(o, a, k) < 0)) goto bad;
+  if (unlikely(__pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_1__cinit__(o, a, k) < 0)) goto bad;
   return o;
   bad:
   Py_DECREF(o); o = 0;
   return NULL;
 }
 
-static void __pyx_tp_dealloc_10bayesclass_17cppSelectFeatures_CSelectKBest(PyObject *o) {
+static void __pyx_tp_dealloc_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted(PyObject *o) {
   #if CYTHON_USE_TP_FINALIZE
   if (unlikely(PyType_HasFeature(Py_TYPE(o), Py_TPFLAGS_HAVE_FINALIZE) && Py_TYPE(o)->tp_finalize) && (!PyType_IS_GC(Py_TYPE(o)) || !_PyGC_FINALIZED(o))) {
     if (PyObject_CallFinalizerFromDealloc(o)) return;
@@ -2036,26 +2484,27 @@ static void __pyx_tp_dealloc_10bayesclass_17cppSelectFeatures_CSelectKBest(PyObj
     PyObject *etype, *eval, *etb;
     PyErr_Fetch(&etype, &eval, &etb);
     __Pyx_SET_REFCNT(o, Py_REFCNT(o) + 1);
-    __pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_3__dealloc__(o);
+    __pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_3__dealloc__(o);
     __Pyx_SET_REFCNT(o, Py_REFCNT(o) - 1);
     PyErr_Restore(etype, eval, etb);
   }
   (*Py_TYPE(o)->tp_free)(o);
 }
 
-static PyMethodDef __pyx_methods_10bayesclass_17cppSelectFeatures_CSelectKBest[] = {
-  {"fit", (PyCFunction)__pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_5fit, METH_NOARGS, 0},
-  {"get_version", (PyCFunction)__pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_7get_version, METH_NOARGS, 0},
-  {"__reduce__", (PyCFunction)__pyx_pw_10bayesclass_17cppSelectFeatures_12CSelectKBest_9__reduce__, METH_NOARGS, 0},
+static PyMethodDef __pyx_methods_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted[] = {
+  {"fit", (PyCFunction)__pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_5fit, METH_NOARGS, 0},
+  {"get_score", (PyCFunction)__pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_7get_score, METH_NOARGS, 0},
+  {"get_version", (PyCFunction)__pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_9get_version, METH_NOARGS, 0},
+  {"__reduce__", (PyCFunction)__pyx_pw_10bayesclass_17cppSelectFeatures_20CSelectKBestWeighted_11__reduce__, METH_NOARGS, 0},
   {0, 0, 0, 0}
 };
 
-static PyTypeObject __pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBest = {
+static PyTypeObject __pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted = {
   PyVarObject_HEAD_INIT(0, 0)
-  "bayesclass.cppSelectFeatures.CSelectKBest", /*tp_name*/
-  sizeof(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBest), /*tp_basicsize*/
+  "bayesclass.cppSelectFeatures.CSelectKBestWeighted", /*tp_name*/
+  sizeof(struct __pyx_obj_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted), /*tp_basicsize*/
   0, /*tp_itemsize*/
-  __pyx_tp_dealloc_10bayesclass_17cppSelectFeatures_CSelectKBest, /*tp_dealloc*/
+  __pyx_tp_dealloc_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted, /*tp_dealloc*/
   #if PY_VERSION_HEX < 0x030800b4
   0, /*tp_print*/
   #endif
@@ -2088,7 +2537,7 @@ static PyTypeObject __pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBest = {
   0, /*tp_weaklistoffset*/
   0, /*tp_iter*/
   0, /*tp_iternext*/
-  __pyx_methods_10bayesclass_17cppSelectFeatures_CSelectKBest, /*tp_methods*/
+  __pyx_methods_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted, /*tp_methods*/
   0, /*tp_members*/
   0, /*tp_getset*/
   0, /*tp_base*/
@@ -2098,7 +2547,7 @@ static PyTypeObject __pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBest = {
   0, /*tp_dictoffset*/
   0, /*tp_init*/
   0, /*tp_alloc*/
-  __pyx_tp_new_10bayesclass_17cppSelectFeatures_CSelectKBest, /*tp_new*/
+  __pyx_tp_new_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted, /*tp_new*/
   0, /*tp_free*/
   0, /*tp_is_gc*/
   0, /*tp_bases*/
@@ -2168,16 +2617,24 @@ static struct PyModuleDef __pyx_moduledef = {
 #endif
 
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
-  {&__pyx_n_s_CSelectKBest, __pyx_k_CSelectKBest, sizeof(__pyx_k_CSelectKBest), 0, 0, 1, 1},
+  {&__pyx_n_s_CSelectKBestWeighted, __pyx_k_CSelectKBestWeighted, sizeof(__pyx_k_CSelectKBestWeighted), 0, 0, 1, 1},
   {&__pyx_n_s_X, __pyx_k_X, sizeof(__pyx_k_X), 0, 0, 1, 1},
   {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
+  {&__pyx_n_s_k, __pyx_k_k, sizeof(__pyx_k_k), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
   {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
+  {&__pyx_n_s_natural, __pyx_k_natural, sizeof(__pyx_k_natural), 0, 0, 1, 1},
+  {&__pyx_n_s_range, __pyx_k_range, sizeof(__pyx_k_range), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
+  {&__pyx_n_s_weights, __pyx_k_weights, sizeof(__pyx_k_weights), 0, 0, 1, 1},
+  {&__pyx_n_s_y, __pyx_k_y, sizeof(__pyx_k_y), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(1, 61, __pyx_L1_error)
   return 0;
+  __pyx_L1_error:;
+  return -1;
 }
 
 static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
@@ -2233,15 +2690,15 @@ static int __Pyx_modinit_type_init_code(void) {
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__Pyx_modinit_type_init_code", 0);
   /*--- Type init code ---*/
-  if (PyType_Ready(&__pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBest) < 0) __PYX_ERR(0, 13, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted) < 0) __PYX_ERR(0, 16, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
-  __pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBest.tp_print = 0;
+  __pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted.tp_print = 0;
   #endif
-  if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBest.tp_dictoffset && __pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBest.tp_getattro == PyObject_GenericGetAttr)) {
-    __pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBest.tp_getattro = __Pyx_PyObject_GenericGetAttr;
+  if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted.tp_dictoffset && __pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted.tp_getattro == PyObject_GenericGetAttr)) {
+    __pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted.tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_CSelectKBest, (PyObject *)&__pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBest) < 0) __PYX_ERR(0, 13, __pyx_L1_error)
-  __pyx_ptype_10bayesclass_17cppSelectFeatures_CSelectKBest = &__pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBest;
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_CSelectKBestWeighted, (PyObject *)&__pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted) < 0) __PYX_ERR(0, 16, __pyx_L1_error)
+  __pyx_ptype_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted = &__pyx_type_10bayesclass_17cppSelectFeatures_CSelectKBestWeighted;
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -2533,6 +2990,32 @@ end:
 }
 #endif
 
+/* RaiseArgTupleInvalid */
+static void __Pyx_RaiseArgtupleInvalid(
+    const char* func_name,
+    int exact,
+    Py_ssize_t num_min,
+    Py_ssize_t num_max,
+    Py_ssize_t num_found)
+{
+    Py_ssize_t num_expected;
+    const char *more_or_less;
+    if (num_found < num_min) {
+        num_expected = num_min;
+        more_or_less = "at least";
+    } else {
+        num_expected = num_max;
+        more_or_less = "at most";
+    }
+    if (exact) {
+        more_or_less = "exactly";
+    }
+    PyErr_Format(PyExc_TypeError,
+                 "%.200s() takes %.8s %" CYTHON_FORMAT_SSIZE_T "d positional argument%.1s (%" CYTHON_FORMAT_SSIZE_T "d given)",
+                 func_name, more_or_less, num_expected,
+                 (num_expected == 1) ? "" : "s", num_found);
+}
+
 /* RaiseDoubleKeywords */
 static void __Pyx_RaiseDoubleKeywordsError(
     const char* func_name,
@@ -2649,30 +3132,32 @@ bad:
     return -1;
 }
 
-/* RaiseArgTupleInvalid */
-static void __Pyx_RaiseArgtupleInvalid(
-    const char* func_name,
-    int exact,
-    Py_ssize_t num_min,
-    Py_ssize_t num_max,
-    Py_ssize_t num_found)
-{
-    Py_ssize_t num_expected;
-    const char *more_or_less;
-    if (num_found < num_min) {
-        num_expected = num_min;
-        more_or_less = "at least";
-    } else {
-        num_expected = num_max;
-        more_or_less = "at most";
+/* PyObjectGetAttrStr */
+#if CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name) {
+    PyTypeObject* tp = Py_TYPE(obj);
+    if (likely(tp->tp_getattro))
+        return tp->tp_getattro(obj, attr_name);
+#if PY_MAJOR_VERSION < 3
+    if (likely(tp->tp_getattr))
+        return tp->tp_getattr(obj, PyString_AS_STRING(attr_name));
+#endif
+    return PyObject_GetAttr(obj, attr_name);
+}
+#endif
+
+/* GetBuiltinName */
+static PyObject *__Pyx_GetBuiltinName(PyObject *name) {
+    PyObject* result = __Pyx_PyObject_GetAttrStr(__pyx_b, name);
+    if (unlikely(!result)) {
+        PyErr_Format(PyExc_NameError,
+#if PY_MAJOR_VERSION >= 3
+            "name '%U' is not defined", name);
+#else
+            "name '%.200s' is not defined", PyString_AS_STRING(name));
+#endif
     }
-    if (exact) {
-        more_or_less = "exactly";
-    }
-    PyErr_Format(PyExc_TypeError,
-                 "%.200s() takes %.8s %" CYTHON_FORMAT_SSIZE_T "d positional argument%.1s (%" CYTHON_FORMAT_SSIZE_T "d given)",
-                 func_name, more_or_less, num_expected,
-                 (num_expected == 1) ? "" : "s", num_found);
+    return result;
 }
 
 /* PyObject_GenericGetAttrNoDict */
@@ -2748,20 +3233,6 @@ static CYTHON_INLINE int __Pyx_object_dict_version_matches(PyObject* obj, PY_UIN
     if (unlikely(!dict) || unlikely(tp_dict_version != __PYX_GET_DICT_VERSION(dict)))
         return 0;
     return obj_dict_version == __Pyx_get_object_dict_version(obj);
-}
-#endif
-
-/* PyObjectGetAttrStr */
-#if CYTHON_USE_TYPE_SLOTS
-static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name) {
-    PyTypeObject* tp = Py_TYPE(obj);
-    if (likely(tp->tp_getattro))
-        return tp->tp_getattro(obj, attr_name);
-#if PY_MAJOR_VERSION < 3
-    if (likely(tp->tp_getattr))
-        return tp->tp_getattr(obj, PyString_AS_STRING(attr_name));
-#endif
-    return PyObject_GetAttr(obj, attr_name);
 }
 #endif
 
@@ -3234,6 +3705,202 @@ raise_neg_overflow:
     PyErr_SetString(PyExc_OverflowError,
         "can't convert negative value to int");
     return (int) -1;
+}
+
+/* CIntFromPy */
+static CYTHON_INLINE size_t __Pyx_PyInt_As_size_t(PyObject *x) {
+#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#endif
+    const size_t neg_one = (size_t) -1, const_zero = (size_t) 0;
+#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
+#pragma GCC diagnostic pop
+#endif
+    const int is_unsigned = neg_one > const_zero;
+#if PY_MAJOR_VERSION < 3
+    if (likely(PyInt_Check(x))) {
+        if (sizeof(size_t) < sizeof(long)) {
+            __PYX_VERIFY_RETURN_INT(size_t, long, PyInt_AS_LONG(x))
+        } else {
+            long val = PyInt_AS_LONG(x);
+            if (is_unsigned && unlikely(val < 0)) {
+                goto raise_neg_overflow;
+            }
+            return (size_t) val;
+        }
+    } else
+#endif
+    if (likely(PyLong_Check(x))) {
+        if (is_unsigned) {
+#if CYTHON_USE_PYLONG_INTERNALS
+            const digit* digits = ((PyLongObject*)x)->ob_digit;
+            switch (Py_SIZE(x)) {
+                case  0: return (size_t) 0;
+                case  1: __PYX_VERIFY_RETURN_INT(size_t, digit, digits[0])
+                case 2:
+                    if (8 * sizeof(size_t) > 1 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 2 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(size_t, unsigned long, (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(size_t) >= 2 * PyLong_SHIFT) {
+                            return (size_t) (((((size_t)digits[1]) << PyLong_SHIFT) | (size_t)digits[0]));
+                        }
+                    }
+                    break;
+                case 3:
+                    if (8 * sizeof(size_t) > 2 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 3 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(size_t, unsigned long, (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(size_t) >= 3 * PyLong_SHIFT) {
+                            return (size_t) (((((((size_t)digits[2]) << PyLong_SHIFT) | (size_t)digits[1]) << PyLong_SHIFT) | (size_t)digits[0]));
+                        }
+                    }
+                    break;
+                case 4:
+                    if (8 * sizeof(size_t) > 3 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 4 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(size_t, unsigned long, (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(size_t) >= 4 * PyLong_SHIFT) {
+                            return (size_t) (((((((((size_t)digits[3]) << PyLong_SHIFT) | (size_t)digits[2]) << PyLong_SHIFT) | (size_t)digits[1]) << PyLong_SHIFT) | (size_t)digits[0]));
+                        }
+                    }
+                    break;
+            }
+#endif
+#if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX < 0x030C00A7
+            if (unlikely(Py_SIZE(x) < 0)) {
+                goto raise_neg_overflow;
+            }
+#else
+            {
+                int result = PyObject_RichCompareBool(x, Py_False, Py_LT);
+                if (unlikely(result < 0))
+                    return (size_t) -1;
+                if (unlikely(result == 1))
+                    goto raise_neg_overflow;
+            }
+#endif
+            if (sizeof(size_t) <= sizeof(unsigned long)) {
+                __PYX_VERIFY_RETURN_INT_EXC(size_t, unsigned long, PyLong_AsUnsignedLong(x))
+#ifdef HAVE_LONG_LONG
+            } else if (sizeof(size_t) <= sizeof(unsigned PY_LONG_LONG)) {
+                __PYX_VERIFY_RETURN_INT_EXC(size_t, unsigned PY_LONG_LONG, PyLong_AsUnsignedLongLong(x))
+#endif
+            }
+        } else {
+#if CYTHON_USE_PYLONG_INTERNALS
+            const digit* digits = ((PyLongObject*)x)->ob_digit;
+            switch (Py_SIZE(x)) {
+                case  0: return (size_t) 0;
+                case -1: __PYX_VERIFY_RETURN_INT(size_t, sdigit, (sdigit) (-(sdigit)digits[0]))
+                case  1: __PYX_VERIFY_RETURN_INT(size_t,  digit, +digits[0])
+                case -2:
+                    if (8 * sizeof(size_t) - 1 > 1 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 2 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(size_t, long, -(long) (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(size_t) - 1 > 2 * PyLong_SHIFT) {
+                            return (size_t) (((size_t)-1)*(((((size_t)digits[1]) << PyLong_SHIFT) | (size_t)digits[0])));
+                        }
+                    }
+                    break;
+                case 2:
+                    if (8 * sizeof(size_t) > 1 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 2 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(size_t, unsigned long, (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(size_t) - 1 > 2 * PyLong_SHIFT) {
+                            return (size_t) ((((((size_t)digits[1]) << PyLong_SHIFT) | (size_t)digits[0])));
+                        }
+                    }
+                    break;
+                case -3:
+                    if (8 * sizeof(size_t) - 1 > 2 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 3 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(size_t, long, -(long) (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(size_t) - 1 > 3 * PyLong_SHIFT) {
+                            return (size_t) (((size_t)-1)*(((((((size_t)digits[2]) << PyLong_SHIFT) | (size_t)digits[1]) << PyLong_SHIFT) | (size_t)digits[0])));
+                        }
+                    }
+                    break;
+                case 3:
+                    if (8 * sizeof(size_t) > 2 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 3 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(size_t, unsigned long, (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(size_t) - 1 > 3 * PyLong_SHIFT) {
+                            return (size_t) ((((((((size_t)digits[2]) << PyLong_SHIFT) | (size_t)digits[1]) << PyLong_SHIFT) | (size_t)digits[0])));
+                        }
+                    }
+                    break;
+                case -4:
+                    if (8 * sizeof(size_t) - 1 > 3 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 4 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(size_t, long, -(long) (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(size_t) - 1 > 4 * PyLong_SHIFT) {
+                            return (size_t) (((size_t)-1)*(((((((((size_t)digits[3]) << PyLong_SHIFT) | (size_t)digits[2]) << PyLong_SHIFT) | (size_t)digits[1]) << PyLong_SHIFT) | (size_t)digits[0])));
+                        }
+                    }
+                    break;
+                case 4:
+                    if (8 * sizeof(size_t) > 3 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 4 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(size_t, unsigned long, (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(size_t) - 1 > 4 * PyLong_SHIFT) {
+                            return (size_t) ((((((((((size_t)digits[3]) << PyLong_SHIFT) | (size_t)digits[2]) << PyLong_SHIFT) | (size_t)digits[1]) << PyLong_SHIFT) | (size_t)digits[0])));
+                        }
+                    }
+                    break;
+            }
+#endif
+            if (sizeof(size_t) <= sizeof(long)) {
+                __PYX_VERIFY_RETURN_INT_EXC(size_t, long, PyLong_AsLong(x))
+#ifdef HAVE_LONG_LONG
+            } else if (sizeof(size_t) <= sizeof(PY_LONG_LONG)) {
+                __PYX_VERIFY_RETURN_INT_EXC(size_t, PY_LONG_LONG, PyLong_AsLongLong(x))
+#endif
+            }
+        }
+        {
+#if CYTHON_COMPILING_IN_PYPY && !defined(_PyLong_AsByteArray)
+            PyErr_SetString(PyExc_RuntimeError,
+                            "_PyLong_AsByteArray() not available in PyPy, cannot convert large numbers");
+#else
+            size_t val;
+            PyObject *v = __Pyx_PyNumber_IntOrLong(x);
+ #if PY_MAJOR_VERSION < 3
+            if (likely(v) && !PyLong_Check(v)) {
+                PyObject *tmp = v;
+                v = PyNumber_Long(tmp);
+                Py_DECREF(tmp);
+            }
+ #endif
+            if (likely(v)) {
+                int one = 1; int is_little = (int)*(unsigned char *)&one;
+                unsigned char *bytes = (unsigned char *)&val;
+                int ret = _PyLong_AsByteArray((PyLongObject *)v,
+                                              bytes, sizeof(val),
+                                              is_little, !is_unsigned);
+                Py_DECREF(v);
+                if (likely(!ret))
+                    return val;
+            }
+#endif
+            return (size_t) -1;
+        }
+    } else {
+        size_t val;
+        PyObject *tmp = __Pyx_PyNumber_IntOrLong(x);
+        if (!tmp) return (size_t) -1;
+        val = __Pyx_PyInt_As_size_t(tmp);
+        Py_DECREF(tmp);
+        return val;
+    }
+raise_overflow:
+    PyErr_SetString(PyExc_OverflowError,
+        "value too large to convert to size_t");
+    return (size_t) -1;
+raise_neg_overflow:
+    PyErr_SetString(PyExc_OverflowError,
+        "can't convert negative value to size_t");
+    return (size_t) -1;
 }
 
 /* CIntToPy */
