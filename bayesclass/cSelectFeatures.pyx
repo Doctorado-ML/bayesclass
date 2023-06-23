@@ -6,12 +6,13 @@ from libcpp cimport bool
 
 
 cdef extern from "FeatureSelect.h" namespace "features":
-    ctypedef double precision_t
+    ctypedef float precision_t
     cdef cppclass SelectKBestWeighted:
         SelectKBestWeighted(vector[vector[int]]&, vector[int]&, vector[precision_t]&, int, bool) except + 
         void fit()
         string version()
-        vector[precision_t] getScore()
+        vector[precision_t] getScores()
+        vector[int] getFeatures()
         
 cdef class CSelectKBestWeighted:
     cdef SelectKBestWeighted *thisptr
@@ -22,8 +23,10 @@ cdef class CSelectKBestWeighted:
     def fit(self,):
         self.thisptr.fit()
         return self
-    def get_score(self):
-        return self.thisptr.getScore()
+    def get_scores(self):
+        return self.thisptr.getScores()
+    def get_features(self):
+        return self.thisptr.getFeatures()
     def get_version(self):
         return self.thisptr.version()
     def __reduce__(self):

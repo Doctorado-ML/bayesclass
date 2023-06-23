@@ -21,16 +21,17 @@ namespace features {
         bool nat; // use natural log or log2
         int numFeatures, numClasses, numSamples;
         bool fitted;
-        score_t score;
+        score_t scores; // scores of the features
+        labels_t features; // indices of the selected features
         precision_t entropyLabel();
         precision_t entropy(const sample_t&);
         precision_t conditionalEntropy(const int);
         precision_t MutualInformation(const int);
-        void outputValues();
     public:
         SelectKBestWeighted(samples_t&, labels_t&, weights_t&, int, bool);
         void fit();
-        score_t getScore() const;
+        score_t getScores() const;
+        labels_t getFeatures() const; //Return the indices of the selected features
         static inline string version() { return "0.1.0"; };
     };
 }

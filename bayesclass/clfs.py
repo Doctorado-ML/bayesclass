@@ -15,7 +15,7 @@ from pgmpy.models import BayesianNetwork
 from pgmpy.base import DAG
 import matplotlib.pyplot as plt
 from fimdlp.mdlp import FImdlp
-from .feature_selection import SelectKBestWeighted
+from .cppSelectFeatures import CSelectKBestWeighted
 from ._version import __version__
 
 
@@ -869,15 +869,39 @@ class BoostAODE(ClassifierMixin, BaseEnsemble):
         self.nodes_leaves = self.nodes_edges
         return self
 
-    def mutual_info_classif_weighted(X, y, sample_weight):
-        # Compute the mutual information between each feature and the target
-        mi = mutual_info_classif(X, y)
+    def version(self):
+        if hasattr(self, "fitted_"):
+            return self.estimator_.version()
+        return SPODE(None, False).version()
 
-        # Multiply the mutual information scores with the sample weights
-        mi_weighted = mi * sample_weight
+    @property
+    def states_(self):
+        if hasattr(self, "fitted_"):
+            return sum(
+                [
+                    len(item)
+                    for model in self.estimators_
+                    for _, item in model.model_.states.items()
+                ]
+            ) / len(self.estimators_)
+        return 0
 
-        # Return the weighted mutual information scores
-        return mi_weighted
+    @property
+    def depth_(self):
+        return self.states_
+
+    def nodes_edges(self):
+        nodes = 0
+        edges = 0
+        if hasattr(self, "fitted_"):
+            nodes = sum([len(x.dag_) for x in self.estimators_])
+            edges = sum([len(x.dag_.edges()) for x in self.estimators_])
+        return nodes, edges
+
+    def plot(self, title=""):
+        warnings.simplefilter("ignore", UserWarning)
+        for idx, model in enumerate(self.estimators_):
+            model.plot(title=f"{idx} {title}")
 
     def _train(self, kwargs):
         """Build boosted SPODEs"""
@@ -885,14 +909,12 @@ class BoostAODE(ClassifierMixin, BaseEnsemble):
         # Step 0: Set the finish condition
         for num in range(self.n_estimators):
             # Step 1: Build ranking with mutual information
-            # OJO MAL, ESTO NO ACTUALIZA EL RANKING CON LOS PESOS
-            # SIEMPRE VA A SACAR LO MISMO
-            feature = (
-                SelectKBestWeighted(k=1)
-                .fit(self.X_, self.y_, weights)
-                .get_feature_names_out(self.feature_names_in_)
-                .tolist()
+            n_feature = (
+                CSelectKBestWeighted(self.X_, self.y_, weights, k=1)
+                .fit()
+                .get_features()[0]
             )
+            feature = self.feature_names_in_[n_feature]
             # Step 2: Build & train spode with the first feature as sparent
             estimator = clone(self.estimator_)
             _args = kwargs.copy()
@@ -910,8 +932,8 @@ class BoostAODE(ClassifierMixin, BaseEnsemble):
             am = np.log((1 - em) / em) + np.log(estimator.n_classes_ - 1)
             # Step 3.2: Update weights for next classifier
             weights = [
-                wm * np.exp(am * (ym != y_pred))
-                for wm, ym in zip(weights, self.y_)
+                wm * np.exp(am * (ym != yp))
+                for wm, ym, yp in zip(weights, self.y_, y_pred)
             ]
             # Step 4: Add the new model
             self.estimators_.append(estimator)

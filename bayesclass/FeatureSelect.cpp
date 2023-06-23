@@ -1,5 +1,4 @@
 #include "FeatureSelect.h"
-#include <iostream>
 namespace features {
     SelectKBestWeighted::SelectKBestWeighted(samples_t& samples, labels_t& labels, weights_t& weights, int k, bool nat)
         : samples(samples), labels(labels), weights(weights), k(k), nat(nat)
@@ -22,38 +21,24 @@ namespace features {
         auto labelsCopy = labels;
         numFeatures = samples[0].size();
         numSamples = samples.size();
+        // compute number of classes
         sort(labelsCopy.begin(), labelsCopy.end());
         auto last = unique(labelsCopy.begin(), labelsCopy.end());
         labelsCopy.erase(last, labelsCopy.end());
         numClasses = labelsCopy.size();
-        score.reserve(numFeatures);
+        // compute scores
+        scores.reserve(numFeatures);
         for (int i = 0; i < numFeatures; ++i) {
-            score.push_back(MutualInformation(i));
+            scores.push_back(MutualInformation(i));
+            features.push_back(i);
         }
-        outputValues();
+        // sort & reduce scores and features
+        sort(features.begin(), features.end(), [&](int i, int j)
+            { return scores[i] > scores[j]; });
+        sort(scores.begin(), scores.end(), greater<precision_t>());
+        features.resize(k);
+        scores.resize(k);
         fitted = true;
-    }
-    void SelectKBestWeighted::outputValues()
-    {
-        cout << "numFeatures: " << numFeatures << endl;
-        cout << "numClasses: " << numClasses << endl;
-        cout << "numSamples: " << numSamples << endl;
-        cout << "k: " << k << endl;
-        cout << "weights: ";
-        for (auto item : weights)
-            cout << item << ", ";
-        cout << "end." << endl;
-        cout << "labels: ";
-        for (auto item : labels)
-            cout << item << ", ";
-        cout << "end." << endl;
-        cout << "samples: " << endl;
-        for (auto item : samples) {
-            for (auto item2 : item)
-                cout << item2 << ", ";
-            cout << "end." << endl;
-        }
-        cout << "end." << endl;
     }
     precision_t SelectKBestWeighted::entropyLabel()
     {
@@ -61,20 +46,21 @@ namespace features {
     }
     precision_t SelectKBestWeighted::entropy(const sample_t& data)
     {
-        precision_t p;
         precision_t ventropy = 0, totalWeight = 0;
         score_t counts(numClasses + 1, 0);
-        for (auto i = 0; i < data.size(); ++i) {
+        for (auto i = 0; i < static_cast<int>(data.size()); ++i) {
             counts[data[i]] += weights[i];
             totalWeight += weights[i];
         }
         for (auto count : counts) {
-            p = count / totalWeight;
-            if (p > 0)
-                if (nat)
+            precision_t p = count / totalWeight;
+            if (p > 0) {
+                if (nat) {
                     ventropy -= p * log(p);
-                else
+                } else {
                     ventropy -= p * log2(p);
+                }
+            }
         }
         return ventropy;
     }
@@ -100,10 +86,11 @@ namespace features {
             for (auto& [label, jointCount] : jointCounts[feat]) {
                 auto p_l_f = jointCount / count;
                 if (p_l_f > 0) {
-                    if (nat)
+                    if (nat) {
                         entropy_f -= p_l_f * log(p_l_f);
-                    else
+                    } else {
                         entropy_f -= p_l_f * log2(p_l_f);
+                    }
                 }
             }
             entropy += p_f * entropy_f;
@@ -115,27 +102,17 @@ namespace features {
     {
         return entropyLabel() - conditionalEntropy(i);
     }
-    score_t SelectKBestWeighted::getScore() const
+    score_t SelectKBestWeighted::getScores() const
     {
         if (!fitted)
             throw logic_error("score not fitted");
-        return score;
+        return scores;
+    }
+    //Return the indices of the selected features
+    labels_t SelectKBestWeighted::getFeatures() const
+    {
+        if (!fitted)
+            throw logic_error("score not fitted");
+        return features;
     }
 }
-
-// using namespace std;
-
-// int main()
-// {
-//     vector<vector<int>> samples = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9} };
-//     vector<int> labels = { 1, 2, 1 };
-//     vector<float> weights = { 0.1, 0.7, 0.2 };
-//     int k = 3;
-//     auto metric = features::SelectKBestWeighted(samples, labels, weights, k);
-//     metric.fit();
-//     cout << "score: ";
-//     for (auto item : metric.getScore())
-//         cout << item << ", ";
-//     cout << "end." << endl;
-//     return 0;
-// }
