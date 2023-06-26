@@ -819,7 +819,6 @@ class BoostSPODE(BayesBase):
 
     def _train(self, kwargs):
         states = dict(state_names=kwargs.get("state_names", []))
-        breakpoint()
         self.model_ = BayesianNetwork(self.dag_.edges(), show_progress=False)
         self.model_.fit(
             self.dataset_,
@@ -836,11 +835,9 @@ class BoostAODE(ClassifierMixin, BaseEnsemble):
         show_progress=False,
         random_state=None,
         estimator=None,
-        n_estimators=10,
     ):
         self.show_progress = show_progress
         self.random_state = random_state
-        self.n_estimators = n_estimators
         super().__init__(estimator=estimator)
 
     def _validate_estimator(self) -> None:
@@ -906,14 +903,22 @@ class BoostAODE(ClassifierMixin, BaseEnsemble):
     def _train(self, kwargs):
         """Build boosted SPODEs"""
         weights = [1 / self.n_samples_] * self.n_samples_
+        selected_features = []
         # Step 0: Set the finish condition
-        for num in range(self.n_estimators):
+        for _ in range(self.n_features_in_):
             # Step 1: Build ranking with mutual information
-            n_feature = (
-                CSelectKBestWeighted(self.X_, self.y_, weights, k=1)
+            features = (
+                CSelectKBestWeighted(
+                    self.X_, self.y_, weights, k=self.n_features_in_
+                )
                 .fit()
-                .get_features()[0]
+                .get_features()
             )
+            # Step 1.1: Select the feature to become the sparent
+            for n_feature in features:
+                if n_feature not in selected_features:
+                    selected_features.append(n_feature)
+                    break
             feature = self.feature_names_in_[n_feature]
             # Step 2: Build & train spode with the first feature as sparent
             estimator = clone(self.estimator_)
@@ -921,7 +926,7 @@ class BoostAODE(ClassifierMixin, BaseEnsemble):
             _args["sparent"] = feature
             _args["sample_weight"] = weights
             _args["weighted"] = True
-            print("I'm gonna build a spode with", feature)
+            # print("I'm gonna build a spode with", feature)
             # Step 2.1: build dataset
             # Step 2.2: Train the model
             estimator.fit(self.X_, self.y_, **_args)
@@ -937,3 +942,12 @@ class BoostAODE(ClassifierMixin, BaseEnsemble):
             ]
             # Step 4: Add the new model
             self.estimators_.append(estimator)
+        self.weights_ = weights
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        n_samples = X.shape[0]
+        n_estimators = len(self.estimators_)
+        result = np.empty((n_samples, n_estimators))
+        for index, estimator in enumerate(self.estimators_):
+            result[:, index] = estimator.predict(X)
+        return mode(result, axis=1, keepdims=False).mode.ravel()
