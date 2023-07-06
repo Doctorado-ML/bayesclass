@@ -16,7 +16,7 @@ namespace bayesnet {
         string className;
         int laplaceSmoothing;
         bool isCyclic(const std::string&, std::unordered_set<std::string>&, std::unordered_set<std::string>&);
-        pair<int, double> predict_sample(const vector<int>&);
+        vector<double> predict_sample(const vector<int>&);
         vector<double> exactInference(map<string, int>&);
         double computeFactor(map<string, int>&);
     public:
@@ -34,8 +34,9 @@ namespace bayesnet {
         string getClassName();
         void fit(const vector<vector<int>>&, const vector<int>&, const vector<string>&, const string&);
         vector<int> predict(const vector<vector<int>>&);
-        vector<vector<float>> predict_proba(const vector<vector<int>>&);
+        vector<vector<double>> predict_proba(const vector<vector<int>>&);
         double score(const vector<vector<int>>&, const vector<int>&);
+        inline string version() { return "0.1.0"; }
     };
 }
 #endif

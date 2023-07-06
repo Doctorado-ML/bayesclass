@@ -151,20 +151,24 @@ namespace bayesnet {
             for (int col = 0; col < samples.size(); ++col) {
                 sample.push_back(samples[col][row]);
             }
-            predictions.push_back(predict_sample(sample).first);
+            vector<double> classProbabilities = predict_sample(sample);
+            // Find the class with the maximum posterior probability
+            auto maxElem = max_element(classProbabilities.begin(), classProbabilities.end());
+            int predictedClass = distance(classProbabilities.begin(), maxElem);
+            predictions.push_back(predictedClass);
         }
         return predictions;
     }
-    vector<vector<float>> Network::predict_proba(const vector<vector<int>>& samples)
+    vector<vector<double>> Network::predict_proba(const vector<vector<int>>& samples)
     {
-        vector<pair<int, double>> predictions;
+        vector<vector<double>> predictions;
         vector<int> sample;
         for (int row = 0; row < samples[0].size(); ++row) {
             sample.clear();
             for (int col = 0; col < samples.size(); ++col) {
                 sample.push_back(samples[col][row]);
             }
-            predictions.push_back(predict_sample(sample.second));
+            predictions.push_back(predict_sample(sample));
         }
         return predictions;
     }
@@ -179,7 +183,7 @@ namespace bayesnet {
         }
         return (double)correct / y_pred.size();
     }
-    pair<int, double> Network::predict_sample(const vector<int>& sample)
+    vector<double> Network::predict_sample(const vector<int>& sample)
     {
         // Ensure the sample size is equal to the number of features
         if (sample.size() != features.size()) {
@@ -190,14 +194,8 @@ namespace bayesnet {
         for (int i = 0; i < sample.size(); ++i) {
             evidence[features[i]] = sample[i];
         }
-        vector<double> classProbabilities = exactInference(evidence);
+        return exactInference(evidence);
 
-        // Find the class with the maximum posterior probability
-        auto maxElem = max_element(classProbabilities.begin(), classProbabilities.end());
-        int predictedClass = distance(classProbabilities.begin(), maxElem);
-        double maxProbability = *maxElem;
-
-        return make_pair(predictedClass, maxProbability);
     }
     double Network::computeFactor(map<string, int>& completeEvidence)
     {

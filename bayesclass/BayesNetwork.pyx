@@ -14,7 +14,7 @@ cdef extern from "Network.h" namespace "bayesnet":
         Network(float, float) except + 
         void fit(vector[vector[int]], vector[int], vector[string], string)
         vector[int] predict(vector[vector[int]])
-        vector[vector[float]] predict_proba(vector[vector[int]])
+        vector[vector[double]] predict_proba(vector[vector[int]])
         float score(const vector[vector[int]], const vector[int])
         void addNode(string, int);
         void addEdge(string, string);
