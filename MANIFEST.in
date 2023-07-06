@@ -1,2 +1,4 @@
 include README.md LICENSE
 include bayesclass/FeatureSelect.h
+include bayesclass/Node.h
+include bayesclass/Network.h
