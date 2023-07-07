@@ -25,15 +25,19 @@ cdef class BayesNetwork:
     def __dealloc__(self):
         del self.thisptr
     def fit(self, X, y, features, className):
+        X_ = [X[:, i] for i in range(X.shape[1])]
         features_bytes = [x.encode() for x in features]
-        self.thisptr.fit(X, y, features_bytes, className.encode())
+        self.thisptr.fit(X_, y, features_bytes, className.encode())
         return self
     def predict(self, X):
-        return self.thisptr.predict(X)
+        X_ = [X[:, i] for i in range(X.shape[1])]
+        return self.thisptr.predict(X_)
     def predict_proba(self, X):
-        return self.thisptr.predict_proba(X)
+        X_ = [X[:, i] for i in range(X.shape[1])]
+        return self.thisptr.predict_proba(X_)
     def score(self, X, y):
-        return self.thisptr.score(X, y)
+        X_ = [X[:, i] for i in range(X.shape[1])]
+        return self.thisptr.score(X_, y)
     def addNode(self, name, states):
         self.thisptr.addNode(str.encode(name), states)
     def addEdge(self, source, destination):
