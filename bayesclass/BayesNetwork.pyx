@@ -2,13 +2,8 @@
 # cython: language_level = 3
 from libcpp.vector cimport vector
 from libcpp.string cimport string
-from libcpp.pair cimport pair
-from libcpp cimport bool
 
 
-cdef extern from "Node.h" namespace "bayesnet":
-    cdef cppclass Node:
-        pass
 cdef extern from "Network.h" namespace "bayesnet":
     cdef cppclass Network:
         Network(float, float) except + 
@@ -39,9 +34,9 @@ cdef class BayesNetwork:
     def score(self, X, y):
         return self.thisptr.score(X, y)
     def addNode(self, name, states):
-        self.thisptr.addNode(name, states)
+        self.thisptr.addNode(str.encode(name), states)
     def addEdge(self, source, destination):
-        self.thisptr.addEdge(source, destination)
+        self.thisptr.addEdge(str.encode(source), str.encode(destination))
     def getFeatures(self):
         return self.thisptr.getFeatures()
     def getClassName(self):

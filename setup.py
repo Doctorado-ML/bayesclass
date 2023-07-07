@@ -5,7 +5,12 @@
 """
 
 from setuptools import Extension, setup
-from torch.utils import cpp_extension
+from torch.utils.cpp_extension import (
+    BuildExtension,
+    CppExtension,
+    include_paths,
+)
+
 
 setup(
     ext_modules=[
@@ -21,18 +26,15 @@ setup(
                 "-std=c++17",
             ],
         ),
-        Extension(
-            name="bayesclass.cppBayesNetwork",
+        CppExtension(
+            name="bayesclass.BayesNet",
             sources=[
                 "bayesclass/BayesNetwork.pyx",
                 "bayesclass/Network.cc",
                 "bayesclass/Node.cc",
             ],
-            include_dirs=cpp_extension.include_paths(),
-            language="c++",
-            extra_compile_args=[
-                "-std=c++17",
-            ],
+            include_dirs=include_paths(),
         ),
-    ]
+    ],
+    cmdclass={"build_ext": BuildExtension},
 )
