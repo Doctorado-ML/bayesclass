@@ -38,6 +38,14 @@ namespace bayesnet {
     {
         return classNumStates;
     }
+    int Network::getStates()
+    {
+        int result = 0;
+        for (auto node : nodes) {
+            result += node.second->getNumStates();
+        }
+        return result;
+    }
     string Network::getClassName()
     {
         return className;

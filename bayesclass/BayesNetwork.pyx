@@ -15,6 +15,7 @@ cdef extern from "Network.h" namespace "bayesnet":
         void addEdge(string, string);
         vector[string] getFeatures();
         int getClassNumStates();
+        int getStates();
         string getClassName();
         string version()
         
@@ -45,6 +46,8 @@ cdef class BayesNetwork:
     def getFeatures(self):
         res = self.thisptr.getFeatures()
         return [x.decode() for x in res]
+    def getStates(self):
+        return self.thisptr.getStates()
     def getClassName(self):
         return self.thisptr.getClassName().decode()
     def getClassNumStates(self):

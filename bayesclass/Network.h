@@ -30,6 +30,7 @@ namespace bayesnet {
         void addEdge(const string, const string);
         map<string, Node*>& getNodes();
         vector<string> getFeatures();
+        int getStates();
         int getClassNumStates();
         string getClassName();
         void fit(const vector<vector<int>>&, const vector<int>&, const vector<string>&, const string&);
