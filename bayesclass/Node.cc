@@ -57,23 +57,23 @@ namespace bayesnet {
     */
     unsigned Node::minFill()
     {
-        set<string> neighbors;
+        unordered_set<string> neighbors;
         for (auto child : children) {
             neighbors.emplace(child->getName());
         }
         for (auto parent : parents) {
             neighbors.emplace(parent->getName());
         }
-        return combinations(neighbors).size();
+        auto source = vector<string>(neighbors.begin(), neighbors.end());
+        return combinations(source).size();
     }
-    vector<string> Node::combinations(const set<string>& neighbors)
+    vector<pair<string, string>> Node::combinations(const vector<string>& source)
     {
-        vector<string> source(neighbors.begin(), neighbors.end());
-        vector<string> result;
+        vector<pair<string, string>> result;
         for (int i = 0; i < source.size(); ++i) {
             string temp = source[i];
             for (int j = i + 1; j < source.size(); ++j) {
-                result.push_back(temp + source[j]);
+                result.push_back({ temp, source[j] });
             }
         }
         return result;

@@ -32,6 +32,7 @@ setup(
                 "bayesclass/BayesNetwork.pyx",
                 "bayesclass/Network.cc",
                 "bayesclass/Node.cc",
+                "bayesclass/Metrics.cc",
             ],
             include_dirs=include_paths(),
         ),

@@ -1,7 +1,7 @@
 #ifndef NODE_H
 #define NODE_H
 #include <torch/torch.h>
-//#include <torch/extension.h>
+#include <unordered_set>
 #include <vector>
 #include <string>
 namespace bayesnet {
@@ -14,8 +14,8 @@ namespace bayesnet {
         int numStates; // number of states of the variable
         torch::Tensor cpTable; // Order of indices is 0-> node variable, 1-> 1st parent, 2-> 2nd parent, ...
         vector<int64_t> dimensions; // dimensions of the cpTable
-        vector<string> combinations(const set<string>&);
     public:
+        vector<pair<string, string>> combinations(const vector<string>&);
         Node(const std::string&, int);
         void addParent(Node*);
         void addChild(Node*);

@@ -16,7 +16,7 @@ from pgmpy.base import DAG
 import matplotlib.pyplot as plt
 from fimdlp.mdlp import FImdlp
 from .cppSelectFeatures import CSelectKBestWeighted
-from .BayesNet import BayesNetwork
+from .BayesNet import BayesNetwork, CMetrics
 from ._version import __version__
 
 
@@ -144,7 +144,7 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         # Store the information needed to build the model
         self.build_dataset()
         # Build the DAG
-        self._build()
+        self._build(kwargs)
         # Train the model
         self._train(kwargs)
         self.fitted_ = True
@@ -153,11 +153,14 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         # Return the classifier
         return self
 
-    def _build(self):
-        """This method should be implemented by the subclasses to
-        build the DAG
-        """
-        ...
+    def _build(self, kwargs):
+        self.model_ = BayesNetwork()
+        features = kwargs["features"]
+        states = kwargs["state_names"]
+        for feature in features:
+            self.model_.addNode(feature, len(states[feature]))
+        class_name = kwargs["class_name"]
+        self.model_.addNode(class_name, max(self.y_) + 1)
 
     def _train(self, kwargs):
         """Build and train a BayesianNetwork from the DAG and the dataset
@@ -178,14 +181,10 @@ class BayesBase(BaseEstimator, ClassifierMixin):
         #     weighted=self.weighted_,
         #     **states,
         # )
-        self.model_ = BayesNetwork()
+
         features = kwargs["features"]
-        states = kwargs["state_names"]
-        for feature in features:
-            self.model_.addNode(feature, len(states[feature]))
         class_name = kwargs["class_name"]
-        self.model_.addNode(class_name, max(self.y_) + 1)
-        for source, destination in self.dag_.edges():
+        for source, destination in self.edges_:
             self.model_.addEdge(source, destination)
         self.model_.fit(self.X_, self.y_, features, class_name)
         self.states_computed_ = self.model_.getStates()
@@ -307,7 +306,7 @@ class TAN(BayesBase):
             raise ValueError("Head index out of range")
         return X, y
 
-    def _build(self):
+    def _build(self, kwargs):
         est = TreeSearch(
             self.dataset_, root_node=self.feature_names_in_[self.head_]
         )
@@ -360,7 +359,7 @@ class KDB(BayesBase):
         ]
         return self._check_params_fit(X, y, expected_args, kwargs)
 
-    def _add_m_edges(self, dag, idx, S_nodes, conditional_weights):
+    def _add_m_edges(self, idx, S_nodes, conditional_weights):
         n_edges = min(self.k, len(S_nodes))
         cond_w = conditional_weights.copy()
         exit_cond = self.k == 0
@@ -369,7 +368,7 @@ class KDB(BayesBase):
             max_minfo = np.argmax(cond_w[idx, :])
             if max_minfo in S_nodes and cond_w[idx, max_minfo] > self.theta:
                 try:
-                    dag.add_edge(
+                    self.add_edge(
                         self.feature_names_in_[max_minfo],
                         self.feature_names_in_[idx],
                     )
@@ -380,7 +379,7 @@ class KDB(BayesBase):
             cond_w[idx, max_minfo] = -1
             exit_cond = num == n_edges or np.all(cond_w[idx, :] <= self.theta)
 
-    def _build(self):
+    def _build(self, kwargs):
         """
         1. For each feature Xi, compute mutual information, I(X;C),
         where C is the class.
@@ -400,14 +399,20 @@ class KDB(BayesBase):
         Compute the conditional probabilility infered by the structure of BN by
         using counts from DB, and output BN.
         """
+        super()._build(kwargs)
         # 1. get the mutual information between each feature and the class
         mutual = mutual_info_classif(self.X_, self.y_, discrete_features=True)
         # 2. symmetric matrix where each element represents I(X, Y| class_node)
-        conditional_weights = TreeSearch(
-            self.dataset_
-        )._get_conditional_weights(
-            self.dataset_, self.class_name_, show_progress=self.show_progress
+        metrics = CMetrics(
+            self.X_,
+            self.y_,
+            self.features_,
+            self.class_name_,
+            self.n_classes_,
         )
+        c_weights = np.array(metrics.conditionalEdgeWeights())
+        n_var = self.n_features_in_ + 1
+        conditional_weights = np.reshape(c_weights, (n_var, n_var))
         '''
         # Step 1: Compute edge weights for a fully connected graph.
         n_vars = len(data.columns)
@@ -442,18 +447,15 @@ class KDB(BayesBase):
         # 3. Let the used variable list, S, be empty.
         S_nodes = []
         # 4. Let the DAG being constructed, BN, begin with a single class node
-        dag = BayesianNetwork()
-        dag.add_node(self.class_name_)  # , state_names=self.classes_)
         # 5. Repeat until S includes all domain features
         # 5.1 Select feature Xmax which is not in S and has the largest value
         for idx in np.argsort(mutual):
             # 5.2 Add a node to BN representing Xmax.
             feature = self.feature_names_in_[idx]
-            dag.add_node(feature)
             # 5.3 Add an arc from C to Xmax in BN.
-            dag.add_edge(self.class_name_, feature)
+            self.edges_.append(self.class_name_, feature)
             # 5.4 Add m = min(lSl,/c) arcs from m distinct features Xj in S
-            self._add_m_edges(dag, idx, S_nodes, conditional_weights)
+            self._add_m_edges(idx, S_nodes, conditional_weights)
             # 5.5 Add Xmax to S.
             S_nodes.append(idx)
         self.dag_ = dag
@@ -851,7 +853,7 @@ class BoostSPODE(BayesBase):
         ]
         return self._check_params_fit(X, y, expected_args, kwargs)
 
-    def _build(self):
+    def _build(self, _):
         class_edges = [(self.class_name_, f) for f in self.feature_names_in_]
         feature_edges = [
             (self.sparent_, f)

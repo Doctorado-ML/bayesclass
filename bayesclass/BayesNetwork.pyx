@@ -3,7 +3,6 @@
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 
-
 cdef extern from "Network.h" namespace "bayesnet":
     cdef cppclass Network:
         Network(float, float) except + 
@@ -54,3 +53,25 @@ cdef class BayesNetwork:
         return self.thisptr.getClassNumStates()
     def __reduce__(self):
         return (BayesNetwork, ())
+
+cdef extern from "Metrics.hpp" namespace "bayesnet":
+    cdef cppclass Metrics:
+        Metrics(vector[vector[int]], vector[int], vector[string]&, string&, int) except +
+        vector[float] conditionalEdgeWeights()
+        vector[float] test()
+
+cdef class CMetrics:
+    cdef Metrics *thisptr
+    def __cinit__(self, X, y, features, className, classStates):
+        X_ = [X[:, i] for i in range(X.shape[1])]
+        features_bytes = [x.encode() for x in features]
+        self.thisptr = new Metrics(X_, y, features_bytes, className.encode(), classStates)
+    def __dealloc__(self):
+        del self.thisptr
+    def conditionalEdgeWeights(self):
+        return self.thisptr.conditionalEdgeWeights()
+    def test(self):
+        return self.thisptr.test()
+    def __reduce__(self):
+        return (CMetrics, ())
+
