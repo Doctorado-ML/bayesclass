@@ -368,7 +368,7 @@ class KDB(BayesBase):
             max_minfo = np.argmax(cond_w[idx, :])
             if max_minfo in S_nodes and cond_w[idx, max_minfo] > self.theta:
                 try:
-                    self.add_edge(
+                    self.model_.addEdge(
                         self.feature_names_in_[max_minfo],
                         self.feature_names_in_[idx],
                     )
@@ -399,7 +399,6 @@ class KDB(BayesBase):
         Compute the conditional probabilility infered by the structure of BN by
         using counts from DB, and output BN.
         """
-        super()._build(kwargs)
         # 1. get the mutual information between each feature and the class
         mutual = mutual_info_classif(self.X_, self.y_, discrete_features=True)
         # 2. symmetric matrix where each element represents I(X, Y| class_node)
@@ -410,53 +409,31 @@ class KDB(BayesBase):
             self.class_name_,
             self.n_classes_,
         )
-        conditional_weights = metrics.conditionalEdgeWeights(self.n_features_in_ + 1)
-        '''
-        # Step 1: Compute edge weights for a fully connected graph.
-        n_vars = len(data.columns)
-        pbar = combinations(data.columns, 2)
-        if show_progress and SHOW_PROGRESS:
-            pbar = tqdm(pbar, total=(n_vars * (n_vars - 1) / 2), desc="Building tree")
-
-        def _conditional_edge_weights_fn(u, v):
-            """
-            Computes the conditional edge weight of variable index u and v conditioned on class_node
-            """
-            cond_marginal = data.loc[:, class_node].value_counts() / data.shape[0]
-            cond_edge_weight = 0
-            for index, marg_prob in cond_marginal.items():
-                df_cond_subset = data[data.loc[:, class_node] == index]
-                cond_edge_weight += marg_prob * edge_weights_fn(
-                    df_cond_subset.loc[:, u], df_cond_subset.loc[:, v]
-                )
-            return cond_edge_weight
-
-        vals = Parallel(n_jobs=1, prefer="threads")(
-            delayed(_conditional_edge_weights_fn)(u, v) for u, v in pbar
+        conditional_weights = metrics.conditionalEdgeWeights(
+            self.n_features_in_ + 1
         )
-        weights = np.zeros((n_vars, n_vars))
-        indices = np.triu_indices(n_vars, k=1)
-        weights[indices] = vals
-        weights.T[indices] = vals
-
-        return weights
-        '''
-
         # 3. Let the used variable list, S, be empty.
         S_nodes = []
+        num_states = {
+            feature: len(states)
+            for feature, states in kwargs["state_names"].items()
+        }
         # 4. Let the DAG being constructed, BN, begin with a single class node
+        self.model_ = BayesNetwork()
+        self.model_.addNode(self.class_name_, self.n_classes_)
         # 5. Repeat until S includes all domain features
         # 5.1 Select feature Xmax which is not in S and has the largest value
         for idx in np.argsort(mutual):
             # 5.2 Add a node to BN representing Xmax.
             feature = self.feature_names_in_[idx]
+            self.model_.addNode(feature, num_states[feature])
             # 5.3 Add an arc from C to Xmax in BN.
-            self.edges_.append(self.class_name_, feature)
+            self.model_.addEdge(self.class_name_, feature)
             # 5.4 Add m = min(lSl,/c) arcs from m distinct features Xj in S
             self._add_m_edges(idx, S_nodes, conditional_weights)
             # 5.5 Add Xmax to S.
             S_nodes.append(idx)
-        self.dag_ = dag
+        self.edges_ = []
 
 
 def build_spodes(features, class_name):

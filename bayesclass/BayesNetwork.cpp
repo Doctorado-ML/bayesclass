@@ -2879,7 +2879,12 @@ static PyObject *__pyx_pf_10bayesclass_8BayesNet_12BayesNetwork_14addEdge(struct
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_5 = __pyx_convert_string_from_py_std__in_string(__pyx_t_1); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 45, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_v_self->thisptr->addEdge(__pyx_t_4, __pyx_t_5);
+  try {
+    __pyx_v_self->thisptr->addEdge(__pyx_t_4, __pyx_t_5);
+  } catch(...) {
+    __Pyx_CppExn2PyErr();
+    __PYX_ERR(0, 45, __pyx_L1_error)
+  }
 
   /* "bayesclass/BayesNetwork.pyx":44
  *     def addNode(self, name, states):

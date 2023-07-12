@@ -11,12 +11,12 @@ cdef extern from "Network.h" namespace "bayesnet":
         vector[int] predict(vector[vector[int]]&)
         vector[vector[double]] predict_proba(vector[vector[int]]&)
         float score(const vector[vector[int]]&, const vector[int]&)
-        void addNode(string, int);
-        void addEdge(string, string);
-        vector[string] getFeatures();
-        int getClassNumStates();
-        int getStates();
-        string getClassName();
+        void addNode(string, int)
+        void addEdge(string, string) except +
+        vector[string] getFeatures()
+        int getClassNumStates()
+        int getStates()
+        string getClassName()
         string version()
         
 cdef class BayesNetwork:
