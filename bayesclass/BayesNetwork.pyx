@@ -2,6 +2,7 @@
 # cython: language_level = 3
 from libcpp.vector cimport vector
 from libcpp.string cimport string
+import numpy as np
 
 cdef extern from "Network.h" namespace "bayesnet":
     cdef cppclass Network:
@@ -58,7 +59,6 @@ cdef extern from "Metrics.hpp" namespace "bayesnet":
     cdef cppclass Metrics:
         Metrics(vector[vector[int]], vector[int], vector[string]&, string&, int) except +
         vector[float] conditionalEdgeWeights()
-        vector[float] test()
 
 cdef class CMetrics:
     cdef Metrics *thisptr
@@ -68,10 +68,8 @@ cdef class CMetrics:
         self.thisptr = new Metrics(X_, y, features_bytes, className.encode(), classStates)
     def __dealloc__(self):
         del self.thisptr
-    def conditionalEdgeWeights(self):
-        return self.thisptr.conditionalEdgeWeights()
-    def test(self):
-        return self.thisptr.test()
+    def conditionalEdgeWeights(self, n_vars):
+        return np.reshape(self.thisptr.conditionalEdgeWeights(), (n_vars, n_vars))
     def __reduce__(self):
         return (CMetrics, ())
 

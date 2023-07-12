@@ -410,9 +410,7 @@ class KDB(BayesBase):
             self.class_name_,
             self.n_classes_,
         )
-        c_weights = np.array(metrics.conditionalEdgeWeights())
-        n_var = self.n_features_in_ + 1
-        conditional_weights = np.reshape(c_weights, (n_var, n_var))
+        conditional_weights = metrics.conditionalEdgeWeights(self.n_features_in_ + 1)
         '''
         # Step 1: Compute edge weights for a fully connected graph.
         n_vars = len(data.columns)
