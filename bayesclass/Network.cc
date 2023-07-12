@@ -21,6 +21,10 @@ namespace bayesnet {
     {
         return maxThreads;
     }
+    torch::Tensor& Network::getSamples()
+    {
+        return samples;
+    }
     void Network::addNode(string name, int numStates)
     {
         if (nodes.find(name) != nodes.end()) {
@@ -241,83 +245,5 @@ namespace bayesnet {
         }
         return result;
     }
-    double Network::mutual_info(torch::Tensor& first, torch::Tensor& second)
-    {
-        return 1;
-    }
-    torch::Tensor Network::conditionalEdgeWeight()
-    {
-        auto result = vector<double>();
-        auto source = vector<string>(features);
-        source.push_back(className);
-        auto combinations = nodes[className]->combinations(source);
-        auto margin = nodes[className]->getCPT();
-        for (auto [first, second] : combinations) {
-            int64_t index_first = find(features.begin(), features.end(), first) - features.begin();
-            int64_t index_second = find(features.begin(), features.end(), second) - features.begin();
-            double accumulated = 0;
-            for (int value = 0; value < classNumStates; ++value) {
-                auto mask = samples.index({ "...", -1 }) == value;
-                auto first_dataset = samples.index({ mask, index_first });
-                auto second_dataset = samples.index({ mask, index_second });
-                auto mi = mutualInformation(first_dataset, second_dataset);
-                auto pb = margin[value].item<float>();
-                accumulated += pb * mi;
-            }
-            result.push_back(accumulated);
-        }
-        long n_vars = source.size();
-        auto matrix = torch::zeros({ n_vars, n_vars });
-        auto indices = torch::triu_indices(n_vars, n_vars, 1);
-        for (auto i = 0; i < result.size(); ++i) {
-            auto x = indices[0][i];
-            auto y = indices[1][i];
-            matrix[x][y] = result[i];
-            matrix[y][x] = result[i];
-        }
-        return matrix;
-    }
-    double Network::entropy(torch::Tensor& feature)
-    {
-        torch::Tensor counts = feature.bincount();
-        int totalWeight = counts.sum().item<int>();
-        torch::Tensor probs = counts.to(torch::kFloat) / totalWeight;
-        torch::Tensor logProbs = torch::log(probs);
-        torch::Tensor entropy = -probs * logProbs;
-        return entropy.nansum().item<double>();
-    }
-    // H(Y|X) = sum_{x in X} p(x) H(Y|X=x)
-    double Network::conditionalEntropy(torch::Tensor& firstFeature, torch::Tensor& secondFeature)
-    {
-        int numSamples = firstFeature.sizes()[0];
-        torch::Tensor featureCounts = secondFeature.bincount();
-        unordered_map<int, unordered_map<int, double>> jointCounts;
-        double totalWeight = 0;
-        for (auto i = 0; i < numSamples; i++) {
-            jointCounts[secondFeature[i].item<int>()][firstFeature[i].item<int>()] += 1;
-            totalWeight += 1;
-        }
-        if (totalWeight == 0)
-            throw invalid_argument("Total weight should not be zero");
-        double entropyValue = 0;
-        for (int value = 0; value < featureCounts.sizes()[0]; ++value) {
-            double p_f = featureCounts[value].item<double>() / totalWeight;
-            double entropy_f = 0;
-            for (auto& [label, jointCount] : jointCounts[value]) {
-                double p_l_f = jointCount / featureCounts[value].item<double>();
-                if (p_l_f > 0) {
-                    entropy_f -= p_l_f * log(p_l_f);
-                } else {
-                    entropy_f = 0;
-                }
-            }
-            entropyValue += p_f * entropy_f;
-        }
-        return entropyValue;
-    }
-    // I(X;Y) = H(Y) - H(Y|X)
-    double Network::mutualInformation(torch::Tensor& firstFeature, torch::Tensor& secondFeature)
-    {
-        return entropy(firstFeature) - conditionalEntropy(firstFeature, secondFeature);
-    }
+
 }

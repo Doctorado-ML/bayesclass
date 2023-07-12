@@ -89,7 +89,7 @@ namespace bayesnet {
             totalWeight += 1;
         }
         if (totalWeight == 0)
-            throw invalid_argument("Total weight should not be zero");
+            return 0;
         double entropyValue = 0;
         for (int value = 0; value < featureCounts.sizes()[0]; ++value) {
             double p_f = featureCounts[value].item<double>() / totalWeight;
