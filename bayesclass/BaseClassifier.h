@@ -28,9 +28,8 @@ namespace bayesnet {
         BaseClassifier& fit(vector<vector<int>>& X, vector<int>& y, vector<string>& features, string className, map<string, vector<int>>& states);
         Tensor predict(Tensor& X);
         float score(Tensor& X, Tensor& y);
-        void show();
+        vector<string> show();
     };
-
 }
 #endif
 

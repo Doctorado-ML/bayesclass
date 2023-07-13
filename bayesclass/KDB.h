@@ -10,9 +10,9 @@ namespace bayesnet {
         float theta;
         void add_m_edges(int idx, vector<int>& S, Tensor& weights);
     protected:
-        void train();
+        void train() override;
     public:
-        KDB(int k, float theta=0.03);
+        KDB(int k, float theta = 0.03);
     };
 }
 #endif
