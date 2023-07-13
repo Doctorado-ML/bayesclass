@@ -18,6 +18,7 @@ cdef extern from "Network.h" namespace "bayesnet":
         int getStates()
         string getClassName()
         string version()
+        void show()
         
 cdef class BayesNetwork:
     cdef Network *thisptr
@@ -52,6 +53,8 @@ cdef class BayesNetwork:
         return self.thisptr.getClassName().decode()
     def getClassNumStates(self):
         return self.thisptr.getClassNumStates()
+    def show(self):
+        return self.thisptr.show()
     def __reduce__(self):
         return (BayesNetwork, ())
 

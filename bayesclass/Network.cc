@@ -245,5 +245,16 @@ namespace bayesnet {
         }
         return result;
     }
+    void Network::show()
+    {
+        // Draw the network
+        for (auto node : nodes) {
+            cout << node.first << " -> ";
+            for (auto child : node.second->getChildren()) {
+                cout << child->getName() << ", ";
+            }
+            cout << endl;
+        }
+    }
 
 }

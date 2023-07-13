@@ -423,7 +423,7 @@ class KDB(BayesBase):
         self.model_.addNode(self.class_name_, self.n_classes_)
         # 5. Repeat until S includes all domain features
         # 5.1 Select feature Xmax which is not in S and has the largest value
-        for idx in np.argsort(mutual):
+        for idx in np.argsort(-mutual):
             # 5.2 Add a node to BN representing Xmax.
             feature = self.feature_names_in_[idx]
             self.model_.addNode(feature, num_states[feature])

@@ -4,7 +4,6 @@
 #include <map>
 #include <vector>
 
-
 namespace bayesnet {
     class Network {
     private:
@@ -45,6 +44,7 @@ namespace bayesnet {
         torch::Tensor conditionalEdgeWeight();
         vector<vector<double>> predict_proba(const vector<vector<int>>&);
         double score(const vector<vector<int>>&, const vector<int>&);
+        void show();
         inline string version() { return "0.1.0"; }
     };
 }

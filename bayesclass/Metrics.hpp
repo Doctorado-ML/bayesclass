@@ -14,11 +14,12 @@ namespace bayesnet {
         vector<pair<string, string>> doCombinations(const vector<string>&);
         double entropy(torch::Tensor&);
         double conditionalEntropy(torch::Tensor&, torch::Tensor&);
-        double mutualInformation(torch::Tensor&, torch::Tensor&);
     public:
+        double mutualInformation(torch::Tensor&, torch::Tensor&);
         Metrics(torch::Tensor&, vector<string>&, string&, int);
         Metrics(const vector<vector<int>>&, const vector<int>&, const vector<string>&, const string&, const int);
         vector<float> conditionalEdgeWeights();
+        torch::Tensor conditionalEdge();
     };
 }
 #endif
