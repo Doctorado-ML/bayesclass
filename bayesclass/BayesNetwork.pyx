@@ -4,7 +4,7 @@ from libcpp.vector cimport vector
 from libcpp.string cimport string
 import numpy as np
 
-cdef extern from "Network.h" namespace "bayesnet":
+cdef extern from "cpp/Network.h" namespace "bayesnet":
     cdef cppclass Network:
         Network(float, float) except + 
         void fit(vector[vector[int]]&, vector[int]&, vector[string]&, string)
@@ -58,7 +58,7 @@ cdef class BayesNetwork:
     def __reduce__(self):
         return (BayesNetwork, ())
 
-cdef extern from "Metrics.hpp" namespace "bayesnet":
+cdef extern from "cpp/Metrics.hpp" namespace "bayesnet":
     cdef cppclass Metrics:
         Metrics(vector[vector[int]], vector[int], vector[string]&, string&, int) except +
         vector[float] conditionalEdgeWeights()

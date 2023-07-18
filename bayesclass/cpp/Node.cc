@@ -6,12 +6,10 @@ namespace bayesnet {
         : name(name), numStates(numStates), cpTable(torch::Tensor()), parents(vector<Node*>()), children(vector<Node*>())
     {
     }
-
     string Node::getName() const
     {
         return name;
     }
-
     void Node::addParent(Node* parent)
     {
         parents.push_back(parent);
@@ -110,5 +108,15 @@ namespace bayesnet {
             coordinates.push_back(torch::tensor(evidence[parent->getName()]));
         }
         return cpTable.index({ coordinates }).item<float>();
+    }
+    vector<string> Node::graph(string className)
+    {
+        auto output = vector<string>();
+        auto suffix = name == className ? ", fontcolor=red, fillcolor=lightblue, style=filled " : "";
+        output.push_back(name + " [shape=circle" + suffix + "] \n");
+        for (auto& child : children) {
+            output.push_back(name + " -> " + child->getName());
+        }
+        return output;
     }
 }

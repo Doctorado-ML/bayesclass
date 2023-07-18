@@ -1,4 +1,5 @@
 #include "Metrics.hpp"
+#include "Mst.h"
 using namespace std;
 namespace bayesnet {
     Metrics::Metrics(torch::Tensor& samples, vector<string>& features, string& className, int classNumStates)
@@ -115,5 +116,16 @@ namespace bayesnet {
     double Metrics::mutualInformation(torch::Tensor& firstFeature, torch::Tensor& secondFeature)
     {
         return entropy(firstFeature) - conditionalEntropy(firstFeature, secondFeature);
+    }
+    /*
+    Compute the maximum spanning tree considering the weights as distances
+    and the indices of the weights as nodes of this square matrix using
+    Kruskal algorithm
+    */
+    vector<pair<int, int>> Metrics::maximumSpanningTree(vector<string> features, Tensor& weights, int root)
+    {
+        auto result = vector<pair<int, int>>();
+        auto mst = MST(features, weights, root);
+        return mst.maximumSpanningTree();
     }
 }

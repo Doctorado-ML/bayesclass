@@ -1,17 +1,9 @@
 #include "KDB.h"
-#include "Metrics.hpp"
 
 namespace bayesnet {
     using namespace std;
     using namespace torch;
-    vector<int> argsort(vector<float>& nums)
-    {
-        int n = nums.size();
-        vector<int> indices(n);
-        iota(indices.begin(), indices.end(), 0);
-        sort(indices.begin(), indices.end(), [&nums](int i, int j) {return nums[i] > nums[j];});
-        return indices;
-    }
+
     KDB::KDB(int k, float theta) : BaseClassifier(Network()), k(k), theta(theta) {}
     void KDB::train()
     {
@@ -36,31 +28,23 @@ namespace bayesnet {
         */
         // 1. For each feature Xi, compute mutual information, I(X;C),
         // where C is the class.
-        cout << "Computing mutual information between features and class" << endl;
-        auto n_classes = states[className].size();
-        auto metrics = Metrics(dataset, features, className, n_classes);
         vector <float> mi;
         for (auto i = 0; i < features.size(); i++) {
             Tensor firstFeature = X.index({ "...", i });
             mi.push_back(metrics.mutualInformation(firstFeature, y));
-            cout << "Mutual information between " << features[i] << " and " << className << " is " << mi[i] << endl;
         }
         // 2. Compute class conditional mutual information I(Xi;XjIC), f or each
         auto conditionalEdgeWeights = metrics.conditionalEdge();
-        cout << "Conditional edge weights" << endl;
-        cout << conditionalEdgeWeights << endl;
         // 3. Let the used variable list, S, be empty.
         vector<int> S;
         // 4. Let the DAG network being constructed, BN, begin with a single
         // class node, C.
         model.addNode(className, states[className].size());
-        cout << "Adding node " << className << " to the network" << endl;
         // 5. Repeat until S includes all domain features
         // 5.1. Select feature Xmax which is not in S and has the largest value
         // I(Xmax;C).
         auto order = argsort(mi);
         for (auto idx : order) {
-            cout << idx << " " << mi[idx] << endl;
             // 5.2. Add a node to BN representing Xmax.
             model.addNode(features[idx], states[features[idx]].size());
             // 5.3. Add an arc from C to Xmax in BN.
@@ -76,8 +60,6 @@ namespace bayesnet {
     {
         auto n_edges = min(k, static_cast<int>(S.size()));
         auto cond_w = clone(weights);
-        cout << "Conditional edge weights cloned for idx " << idx << endl;
-        cout << cond_w << endl;
         bool exit_cond = k == 0;
         int num = 0;
         while (!exit_cond) {
@@ -93,18 +75,16 @@ namespace bayesnet {
                 }
             }
             cond_w.index_put_({ idx, max_minfo }, -1);
-            cout << "Conditional edge weights cloned for idx " << idx << " After -1" << endl;
-            cout << cond_w << endl;
-            cout << "cond_w.index({ idx, '...'})" << endl;
-            cout << cond_w.index({ idx, "..." }) << endl;
             auto candidates_mask = cond_w.index({ idx, "..." }).gt(theta);
             auto candidates = candidates_mask.nonzero();
-            cout << "Candidates mask" << endl;
-            cout << candidates_mask << endl;
-            cout << "Candidates: " << endl;
-            cout << candidates << endl;
-            cout << "Candidates size: " << candidates.size(0) << endl;
             exit_cond = num == n_edges || candidates.size(0) == 0;
         }
+    }
+    vector<string> KDB::graph(string title)
+    {
+        if (title == "KDB") {
+            title += " (k=" + to_string(k) + ", theta=" + to_string(theta) + ")";
+        }
+        return model.graph(title);
     }
 }

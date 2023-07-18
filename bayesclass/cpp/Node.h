@@ -29,6 +29,7 @@ namespace bayesnet {
         int getNumStates() const;
         void setNumStates(int);
         unsigned minFill();
+        vector<string> graph(string clasName); // Returns a vector of strings representing the graph in graphviz format
         float getFactorValue(map<string, int>&);
     };
 }

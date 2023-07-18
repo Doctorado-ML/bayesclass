@@ -1,6 +1,7 @@
 #ifndef KDB_H
 #define KDB_H
 #include "BaseClassifier.h"
+#include "utils.h"
 namespace bayesnet {
     using namespace std;
     using namespace torch;
@@ -13,6 +14,7 @@ namespace bayesnet {
         void train() override;
     public:
         KDB(int k, float theta = 0.03);
+        vector<string> graph(string name = "KDB") override;
     };
 }
 #endif

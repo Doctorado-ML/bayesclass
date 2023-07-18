@@ -5,7 +5,7 @@ from libcpp.string cimport string
 from libcpp cimport bool
 
 
-cdef extern from "FeatureSelect.h" namespace "features":
+cdef extern from "cpp/FeatureSelect.h" namespace "features":
     ctypedef float precision_t
     cdef cppclass SelectKBestWeighted:
         SelectKBestWeighted(vector[vector[int]]&, vector[int]&, vector[precision_t]&, int, bool) except + 

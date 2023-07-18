@@ -1,5 +1,13 @@
 include README.md LICENSE
-include bayesclass/FeatureSelect.h
-include bayesclass/Node.h
-include bayesclass/Network.h
-include bayesclass/Metrics.hpp
+include bayesclass/cpp/FeatureSelect.h
+include bayesclass/cpp/Node.h
+include bayesclass/cpp/Mst.h
+include bayesclass/cpp/Network.h
+include bayesclass/cpp/Metrics.hpp
+include bayesclass/cpp/BaseClassifier.h
+include bayesclass/cpp/Ensemble.h
+include bayesclass/cpp/TAN.h
+include bayesclass/cpp/KDB.h
+include bayesclass/cpp/SPODE.h
+include bayesclass/cpp/AODE.h
+include bayesclass/cpp/utils.h
