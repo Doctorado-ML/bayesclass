@@ -275,5 +275,17 @@ namespace bayesnet {
         output.push_back("}\n");
         return output;
     }
+    vector<pair<string, string>> Network::getEdges()
+    {
+        auto edges = vector<pair<string, string>>();
+        for (const auto& node : nodes) {
+            auto head = node.first;
+            for (const auto& child : node.second->getChildren()) {
+                auto tail = child->getName();
+                edges.push_back({ head, tail });
+            }
+        }
+        return edges;
+    }
 
 }

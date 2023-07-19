@@ -30,6 +30,8 @@ namespace bayesnet {
         virtual ~BaseClassifier() = default;
         BaseClassifier& fit(vector<vector<int>>& X, vector<int>& y, vector<string>& features, string className, map<string, vector<int>>& states);
         void addNodes();
+        int getNumberOfNodes();
+        int getNumberOfEdges();
         Tensor predict(Tensor& X);
         vector<int> predict(vector<vector<int>>& X);
         float score(Tensor& X, Tensor& y);

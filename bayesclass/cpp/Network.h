@@ -36,6 +36,7 @@ namespace bayesnet {
         map<string, std::unique_ptr<Node>>& getNodes();
         vector<string> getFeatures();
         int getStates();
+        vector<pair<string, string>> getEdges();
         int getClassNumStates();
         string getClassName();
         void fit(const vector<vector<int>>&, const vector<int>&, const vector<string>&, const string&);

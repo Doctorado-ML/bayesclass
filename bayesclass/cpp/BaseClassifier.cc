@@ -8,7 +8,6 @@ namespace bayesnet {
     BaseClassifier::BaseClassifier(Network model) : model(model), m(0), n(0), metrics(Metrics()), fitted(false) {}
     BaseClassifier& BaseClassifier::build(vector<string>& features, string className, map<string, vector<int>>& states)
     {
-
         dataset = torch::cat({ X, y.view({y.size(0), 1}) }, 1);
         this->features = features;
         this->className = className;
@@ -115,5 +114,14 @@ namespace bayesnet {
             model.addNode(feature, states[feature].size());
         }
         model.addNode(className, states[className].size());
+    }
+    int BaseClassifier::getNumberOfNodes()
+    {
+        // Features does not include class
+        return fitted ? model.getFeatures().size() + 1 : 0;
+    }
+    int BaseClassifier::getNumberOfEdges()
+    {
+        return fitted ? model.getEdges().size() : 0;
     }
 }
